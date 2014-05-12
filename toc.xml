@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Addon Author="DocVanGogh" APIVersion="8" Name="Newton" Description="Scientist Utility: Remembers which Scanbot you had picked, and auto-summons it.">
+    <Script Name="GeminiLogging/inspect.lua"/>
+    <Script Name="GeminiLogging/GeminiLogging.lua"/>
+    <Script Name="GeminiAddon/GeminiAddon.lua"/>
+    <Script Name="GeminiHook/GeminiHook-1.0.lua"/>
+    <Script Name="Newton.lua"/>
+</Addon>
