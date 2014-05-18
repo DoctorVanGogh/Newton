@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------------------------
 -- Client Lua Script for Newton
--- Copyright (c) DocVanGogh on Wildstar forums
+-- Copyright (c) DoctorVanGogh on Wildstar forums
 -----------------------------------------------------------------------------------------------
  
 require "GameLib"
