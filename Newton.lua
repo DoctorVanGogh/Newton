@@ -39,6 +39,8 @@ function Newton:OnInitialize()
 		appender = "GeminiConsole"
 	})	
 
+	self.log = glog
+	
 	if PlayerPathLib.GetPlayerPathType() ~= PathMission.PlayerPathType_Scientist then
 		return
 	end	
