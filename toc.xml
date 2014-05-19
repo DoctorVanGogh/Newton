@@ -5,4 +5,5 @@
     <Script Name="GeminiAddon/GeminiAddon.lua"/>
     <Script Name="GeminiHook/GeminiHook-1.0.lua"/>
     <Script Name="Newton.lua"/>
+    <Form Name="NewtonForm.xml"/>
 </Addon>

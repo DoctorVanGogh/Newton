@@ -46,16 +46,13 @@ function Newton:OnInitialize()
 	end	
 		
     -- load our form file
-	--self.xmlDoc = XmlDoc.CreateFromFile("Newton.xml")
-	--self.xmlDoc:RegisterCallback("OnDocLoaded", self)	
+	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
+	self.xmlDoc:RegisterCallback("OnDocLoaded", self)	
 	
-	--Apollo.RegisterSlashCommand("newton", "OnSlashCommand", self)
 
 	-- Do additional Addon initialization here		
-	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, 				"OnScanBotCoolDownTimer", self)
-
-	self:PostHook(PlayerPathLib, "ScientistSetScanBotProfile")
-
+	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", self)
+	
 	self.bScanbotOnCooldown = false			
 end
 
@@ -65,7 +62,7 @@ function Newton:OnEnable()
 	glog:debug(string.format("OnEnable"))
 
 	self.ready = true
-	if GameLib.IsCharacterLoaded() then
+	if GameLib.IsCharacterLoaded() and self:GetAutoSummonScanbot() then
 		if not self:GetScanbotOnCooldown() then
 			self:TrySummonScanbot(nil, true)
 		end
@@ -76,8 +73,22 @@ function Newton:OnEnable()
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
-	--self.wndMain:Invoke() -- show the window	
-	Print("Yes dear?")
+	self:ToggleWindow()
+end
+
+function Newton:OnDocumentReady()
+	glog:debug(string.format("OnEnable"))
+
+	if self.xmlDoc == nil then
+		return
+	end
+	
+	self.wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)
+	self.wndMain:FindChild("HeaderLabel"):SetText(MAJOR)
+	self.xmlDoc = nil;
+	
+	Apollo.RegisterSlashCommand("newton", "OnSlashCommand", self)
+	self.wndMain:Show(false);
 end
 
 -----------------------------------------------------------------------------------------------
@@ -94,6 +105,10 @@ end
 
 function Newton:OnScanBotCoolDownTimer()
 	self:SetScanbotOnCooldown(false)
+end
+
+function Newton:GetAutoSummonScanbot()
+	return self.bAutoSummonScanbot or false
 end
 
 function Newton:SetAutoSummonScanbot(bValue)
@@ -116,6 +131,7 @@ function Newton:SetAutoSummonScanbot(bValue)
 		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", self)	
 		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", self)
 		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)			
+		
 			
 		if not self:GetScanbotOnCooldown() then
 			self:TrySummonScanbot(nil)
@@ -123,13 +139,10 @@ function Newton:SetAutoSummonScanbot(bValue)
 	else
 		Apollo.RemoveEventHandler("ChangeWorld", self)	
 		Apollo.RemoveEventHandler("CombatLogMount", self)
-		Apollo.RemoveEventHandler("PlayerPathScientistScanBotCooldown", self)					
+		Apollo.RemoveEventHandler("PlayerPathScientistScanBotCooldown", self)			
 	end
 end
 
-function Newton:GetAutoSummonScanbot()
-	return self.bAutoSummonScanbot or false
-end
 
 function Newton:OnChangeWorld()
 	glog:debug(string.format("OnChangeWorld: IsCharacterLoaded=%s, self=%s", tostring(GameLib.IsCharacterLoaded()),tostring(self)))
@@ -207,10 +220,44 @@ function Newton:TrySummonScanbot(bSummon, bForceRestore)
 	end
 end
 
+function Newton:SummonScanbot(bSummon)
+	glog:debug(string.format("SummonScanbot(%s)", tostring(bSummon)))
+
+	if bSummon and not PlayerPathLib.ScientistHasScanBot() then	
+		PlayerPathLib.ScientistToggleScanBot()	
+	end	
+end
+
+
+-- persistence logic
+
+function Newton:GetPersistScanbot()
+	return self.bPersistScanbot
+end
+
+function Newton:SetPersistScanbot(bValue, nScanbotProfileIndex)
+	glog:debug(string.format("SetPersistScanbot(%s, %i)", tostring(bValue), nScanbotProfileIndex))
+
+	if bValue == self:GetPersistScanbot() then
+		return
+	end
+	
+	self.bPersistScanbot = bValue
+	
+	if bValue then
+		self.nScanbotProfileIndex = nScanbotProfileIndex or GetScanbotProfileIndexFromProfile(PlayerPathLib.ScientistGetScanBotProfile())
+		self:PostHook(PlayerPathLib, "ScientistSetScanBotProfile")	
+	else
+		self:Unhook(PlayerPathLib, "ScientistSetScanBotProfile")
+	end	
+end
+
+
 function Newton:RestoreScanbot(bForceRestore)
 
 	glog:debug(string.format("RestoreScanbot(%s)", tostring(bForceRestore)))
-	
+
+		
 	local currentProfile = PlayerPathLib.ScientistGetScanBotProfile()	
 	-- check if correct bot already selected
 	if bForceRestore or (currentProfile and GetScanbotProfileIndexFromProfile(currentProfile) ~= self.nScanbotProfileIndex) then					
@@ -222,13 +269,7 @@ function Newton:RestoreScanbot(bForceRestore)
 	end		
 end
 
-function Newton:SummonScanbot(bSummon)
-	glog:debug(string.format("SummonScanbot(%s)", tostring(bSummon)))
 
-	if bSummon and not PlayerPathLib.ScientistHasScanBot() then	
-		PlayerPathLib.ScientistToggleScanBot()	
-	end	
-end
 
 function Newton:ScientistSetScanBotProfile(tProfile)
 	local index =  GetScanbotProfileIndexFromProfile(tProfile)
@@ -256,6 +297,7 @@ function Newton:OnSaveSettings(eLevel)
 		}, 
 		nScanbotProfileIndex = self.nScanbotProfileIndex,
 		bAutoSummonScanbot = self:GetAutoSummonScanbot()
+		bPersistScanbot = self:GetPersistScanbot()
 	}
 	
 	return tSave
@@ -271,16 +313,36 @@ function Newton:OnRestoreSettings(eLevel, tSavedData)
 	glog:debug("OnRestoreSettings")
 	
 	if not tSavedData or tSavedData.version.MAJOR ~= MAJOR then
-		self:SetAutoSummonScanbot(false)
+		self:SetAutoSummonScanbot(true)
+		self:SetPersistScanbot(true)
 		return
 	end	
 	
-	self.nScanbotProfileIndex = tSavedData.nScanbotProfileIndex
 	self:SetAutoSummonScanbot(tSavedData.bAutoSummonScanbot or false)
-	
+	self:SetPersistScanbot(tSavedData.bPersistScanbot or false, tSavedData.nScanbotProfileIndex)	
 end
 
------------------------------------------------------------------------------------------------
--- NewtonForm Functions
------------------------------------------------------------------------------------------------
+
+---------------------------------------------------------------------------------------------------
+-- NewtonConfigForm Functions
+---------------------------------------------------------------------------------------------------
+function Newton:ToggleWindow()
+	if self.wndMain:IsVisible() then
+		self.wndMain:Close()
+	else
+		self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
+		self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())
+	
+		self.wndMain:Show(true)
+		self.wndMain:ToFront()
+	end
+end
+
+function Newton:OnAutoSummonCheck( wndHandler, wndControl, eMouseButton )
+	self:SetAutoSummonScanbot(wndControl:IsChecked())
+end
+
+function Newton:OnPersistScanbotCheck( wndHandler, wndControl, eMouseButton )
+	self:SetPersistScanbot(wndControl:IsChecked())
+end
 
