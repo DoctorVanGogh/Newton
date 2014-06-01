@@ -21,33 +21,53 @@ local GetScanbotProfileIndexFromProfile = function(currentProfile)
 	end
 end 
 
-local MAJOR, MINOR = "Newton-1.0", 1
+local kstrDefaultLogLevel = "WARN"
+local kstrInitNoScientistWarning = "Player not a scientist - consider disabling Addon %s for this character!"
+local kstrConfigNoScientistWarning = "Not a scientist - configuration disabled!"
+
+local NAME = "Newton"
+local MAJOR, MINOR = NAME.."-1.0", 1
 local ksScanbotCooldownTimer = "NewtonScanBotCoolDownTimer"
 local glog
-
+local GeminiLocale
+local GeminiLogging
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
-
-local Newton = Apollo.GetPackage("Gemini:Addon-1.0").tPackage:NewAddon("Newton", false, { "Gemini:Logging-1.2" }, "Gemini:Hook-1.0")
+local Newton = Apollo.GetPackage("Gemini:Addon-1.0").tPackage:NewAddon(
+																NAME, 
+																true, 
+																{ 
+																	"Gemini:Logging-1.2",
+																	"Gemini:Locale-1.0"
+																}, 
+																"Gemini:Hook-1.0")
 
 function Newton:OnInitialize()
-	local GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
+	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
 		level = GeminiLogging.INFO,
 		pattern = "%d [%c:%n] %l - %m",
 		appender = "GeminiConsole"
 	})	
 
-	self.log = glog
-	
-	if PlayerPathLib.GetPlayerPathType() ~= PathMission.PlayerPathType_Scientist then
-		return
-	end	
+	GeminiLocale = Apollo.GetPackage("Gemini:Locale-1.0").tPackage		
+	self.localization = GeminiLocale:GetLocale(NAME)
 		
+	Apollo.RegisterSlashCommand("newton", "OnSlashCommand", self)
+	
+	--if PlayerPathLib.GetPlayerPathType() ~= PathMission.PlayerPathType_Scientist then
+	--	glog:warn(self.localization[kstrInitNoScientistWarning], NAME)
+	--	self.bDisabled = true
+	--	return
+	--end		
+
+	self.log = glog
+		
+	Print("Load xml")
     -- load our form file
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
-	self.xmlDoc:RegisterCallback("OnDocLoaded", self)	
+	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
 
 	-- Do additional Addon initialization here		
@@ -59,7 +79,7 @@ end
 
 -- Called when player has loaded and entered the world
 function Newton:OnEnable()
-	glog:debug(string.format("OnEnable"))
+	glog:debug("OnEnable")
 
 	self.ready = true
 	if GameLib.IsCharacterLoaded() and self:GetAutoSummonScanbot() then
@@ -73,22 +93,65 @@ function Newton:OnEnable()
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
-	self:ToggleWindow()
+	if self.wndMain then
+		self:ToggleWindow()
+	else
+		if self.bDisabled then
+			glog:warn(self.localization[kstrConfigNoScientistWarning])
+		end
+	end
+end
+
+function Newton:OnConfigure(sCommand, sArgs)
+	if self.wndMain then
+		self.wndMain:Show(false)
+		self:ToggleWindow()
+	else
+		if self.bDisabled then
+			glog:warn(self.localization[kstrConfigNoScientistWarning])
+		end
+	end
 end
 
 function Newton:OnDocumentReady()
-	glog:debug(string.format("OnEnable"))
+	glog:debug("OnDocumentReady")
 
 	if self.xmlDoc == nil then
 		return
 	end
 	
-	self.wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)
-	self.wndMain:FindChild("HeaderLabel"):SetText(MAJOR)
-	self.xmlDoc = nil;
+	self.wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)	
+	self.wndMain:FindChild("HeaderLabel"):SetText(MAJOR)	
 	
-	Apollo.RegisterSlashCommand("newton", "OnSlashCommand", self)
+	GeminiLocale:TranslateWindow(self.localization, self.wndMain)				
+	
+	self.wndLogLevelsPopup = self.wndMain:FindChild("LogLevelChoices")
+	self.wndLogLevelsPopup:Show(false)
+		
+	self.wndMain:FindChild("LogLevelButton"):AttachWindow(self.wndLogLevelsPopup)
+	self.xmlDoc = nil	
+	
+
+	self:InitializeForm()
+	
 	self.wndMain:Show(false);
+	
+	Apollo.RegisterEventHandler("WindowManagementReady", "OnWindowManagementReady", self)
+	
+end
+
+function Newton:InitializeForm()
+	if not self.wndMain then
+		return
+	end
+	
+	self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
+	self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())	
+	self.wndMain:FindChild("LogLevelButton"):SetText(self.strLogLevel)	
+end
+
+function Newton:OnWindowManagementReady()
+    Event_FireGenericEvent("WindowManagementAdd", {wnd = self.wndMain, strName = "Newton"})
 end
 
 -----------------------------------------------------------------------------------------------
@@ -96,7 +159,7 @@ end
 -----------------------------------------------------------------------------------------------
 
 function Newton:OnPlayerPathScientistScanBotCooldown(fTime) -- iTime is cooldown time in MS (5250)
-	glog:debug(string.format("OnPlayerPathScientistScanBotCooldown(%f)", fTime))
+	glog:debug("OnPlayerPathScientistScanBotCooldown(%f)", fTime)
 
 	fTime = math.max(1, fTime) -- TODO TEMP Lua Hack until fTime is valid
 	Apollo.CreateTimer(ksScanbotCooldownTimer, fTime, false)
@@ -113,12 +176,10 @@ end
 
 function Newton:SetAutoSummonScanbot(bValue)
 	glog:debug(
-		string.format(
-			"SetAutoSummonScanbot(%s) - cooldown=%s,isloaded=%s", 
-			tostring(bValue), 
-			tostring(self:GetScanbotOnCooldown()), 
-			tostring(GameLib.IsCharacterLoaded())
-		)
+		"SetAutoSummonScanbot(%s) - cooldown=%s,isloaded=%s", 
+		tostring(bValue), 
+		tostring(self:GetScanbotOnCooldown()), 
+		tostring(GameLib.IsCharacterLoaded())		
 	)
 
 	if self.bAutoSummonScanbot == bValue then
@@ -145,7 +206,7 @@ end
 
 
 function Newton:OnChangeWorld()
-	glog:debug(string.format("OnChangeWorld: IsCharacterLoaded=%s, self=%s", tostring(GameLib.IsCharacterLoaded()),tostring(self)))
+	glog:debug("OnChangeWorld: IsCharacterLoaded=%s, self=%s", tostring(GameLib.IsCharacterLoaded()),tostring(self))
 	
 	if self == nil or not self.ready then
 		return
@@ -164,7 +225,7 @@ end
 function Newton:OnNewtonUpdate()
 	local bIsCharacterLoaded = GameLib.IsCharacterLoaded()
 
-	glog:debug(string.format("OnNewtonUpdate: IsCharacterLoaded=%s", tostring(bIsCharacterLoaded)))
+	glog:debug("OnNewtonUpdate: IsCharacterLoaded=%s", tostring(bIsCharacterLoaded))
 
 	if not bIsCharacterLoaded then
 		return
@@ -176,7 +237,7 @@ function Newton:OnNewtonUpdate()
 end
 
 function Newton:OnCombatLogMount(tEventArgs)
-	glog:debug(string.format("OnCombatLogMount, dismounted=%s", tostring(tEventArgs.bDismounted)))
+	glog:debug("OnCombatLogMount, dismounted=%s", tostring(tEventArgs.bDismounted))
 
 	if tEventArgs.bDismounted and self:GetAutoSummonScanbot() and not self:GetScanbotOnCooldown()  then
 		self:TrySummonScanbot(true)
@@ -189,7 +250,7 @@ end
 
 
 function Newton:SetScanbotOnCooldown(bValue)
-	glog:debug(string.format("SetScanbotOnCooldown(%s)", tostring(bValue)))
+	glog:debug("SetScanbotOnCooldown(%s)", tostring(bValue))
 
 	if self.bScanbotOnCooldown == bValue then
 		return
@@ -203,7 +264,7 @@ function Newton:SetScanbotOnCooldown(bValue)
 end
 
 function Newton:TrySummonScanbot(bSummon, bForceRestore)
-	glog:debug(string.format("TrySummonScanbot(%s, %s)", tostring(bSummon), tostring(bForceUpdate)))
+	glog:debug("TrySummonScanbot(%s, %s)", tostring(bSummon), tostring(bForceUpdate))
 
 	self:RestoreScanbot(bForceRestore)
 
@@ -221,7 +282,7 @@ function Newton:TrySummonScanbot(bSummon, bForceRestore)
 end
 
 function Newton:SummonScanbot(bSummon)
-	glog:debug(string.format("SummonScanbot(%s)", tostring(bSummon)))
+	glog:debug("SummonScanbot(%s)", tostring(bSummon))
 
 	if bSummon and not PlayerPathLib.ScientistHasScanBot() then	
 		PlayerPathLib.ScientistToggleScanBot()	
@@ -236,7 +297,7 @@ function Newton:GetPersistScanbot()
 end
 
 function Newton:SetPersistScanbot(bValue, nScanbotProfileIndex)
-	glog:debug(string.format("SetPersistScanbot(%s, %i)", tostring(bValue), nScanbotProfileIndex))
+	glog:debug("SetPersistScanbot(%s, %s)", tostring(bValue), tostring(nScanbotProfileIndex))
 
 	if bValue == self:GetPersistScanbot() then
 		return
@@ -246,16 +307,16 @@ function Newton:SetPersistScanbot(bValue, nScanbotProfileIndex)
 	
 	if bValue then
 		self.nScanbotProfileIndex = nScanbotProfileIndex or GetScanbotProfileIndexFromProfile(PlayerPathLib.ScientistGetScanBotProfile())
-		self:PostHook(PlayerPathLib, "ScientistSetScanBotProfile")	
-	else
-		self:Unhook(PlayerPathLib, "ScientistSetScanBotProfile")
+		if not self:IsHooked(PlayerPathLib, "ScientistSetScanBotProfile") then
+			self:PostHook(PlayerPathLib, "ScientistSetScanBotProfile")	
+		end
 	end	
 end
 
 
 function Newton:RestoreScanbot(bForceRestore)
 
-	glog:debug(string.format("RestoreScanbot(%s)", tostring(bForceRestore)))
+	glog:debug("RestoreScanbot(%s)", tostring(bForceRestore))
 
 		
 	local currentProfile = PlayerPathLib.ScientistGetScanBotProfile()	
@@ -273,10 +334,13 @@ end
 
 function Newton:ScientistSetScanBotProfile(tProfile)
 	local index =  GetScanbotProfileIndexFromProfile(tProfile)
-	
-	glog:debug(string.format("ScientistSetScanBotProfile(%i)", index))
 
-	self.nScanbotProfileIndex = index
+	local persist = self:GetPersistScanbot()
+	glog:debug("ScientistSetScanBotProfile(%i) - persist=%s", index, tostring(persist))
+
+	if persist then	
+		self.nScanbotProfileIndex = index
+	end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -296,8 +360,9 @@ function Newton:OnSaveSettings(eLevel)
 			MINOR = MINOR
 		}, 
 		nScanbotProfileIndex = self.nScanbotProfileIndex,
-		bAutoSummonScanbot = self:GetAutoSummonScanbot()
-		bPersistScanbot = self:GetPersistScanbot()
+		bAutoSummonScanbot = self:GetAutoSummonScanbot(),
+		bPersistScanbot = self:GetPersistScanbot(),
+		strLogLevel = self.strLogLevel
 	}
 	
 	return tSave
@@ -315,11 +380,14 @@ function Newton:OnRestoreSettings(eLevel, tSavedData)
 	if not tSavedData or tSavedData.version.MAJOR ~= MAJOR then
 		self:SetAutoSummonScanbot(true)
 		self:SetPersistScanbot(true)
-		return
+		self.strLogLevel = kstrDefaultLogLevel		
+	else
+		self:SetAutoSummonScanbot(tSavedData.bAutoSummonScanbot or false)
+		self:SetPersistScanbot(tSavedData.bPersistScanbot or false, tSavedData.nScanbotProfileIndex)
+		self.strLogLevel = tSavedData.strLogLevel or kstrDefaultLogLevel		
 	end	
 	
-	self:SetAutoSummonScanbot(tSavedData.bAutoSummonScanbot or false)
-	self:SetPersistScanbot(tSavedData.bPersistScanbot or false, tSavedData.nScanbotProfileIndex)	
+	self.log:SetLevel(self.strLogLevel)	
 end
 
 
@@ -330,8 +398,7 @@ function Newton:ToggleWindow()
 	if self.wndMain:IsVisible() then
 		self.wndMain:Close()
 	else
-		self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
-		self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())
+		self:InitializeForm()
 	
 		self.wndMain:Show(true)
 		self.wndMain:ToFront()
@@ -345,4 +412,44 @@ end
 function Newton:OnPersistScanbotCheck( wndHandler, wndControl, eMouseButton )
 	self:SetPersistScanbot(wndControl:IsChecked())
 end
+
+
+function Newton:AdvancedCheckToggle( wndHandler, wndControl, eMouseButton )
+	if wndHandler ~= wndControl then
+		return
+	end	
+	
+	local wndAdvanced = self.wndMain:FindChild("AdvancedContainer")
+	local wndContent = self.wndMain:FindChild("Content")
+		
+	if wndHandler:IsChecked() then
+		wndAdvanced:Show(true)	
+	else
+		wndAdvanced:Show(false)	
+		wndContent:SetVScrollPos(0)
+	end	
+
+	wndContent:ArrangeChildrenVert()
+end
+
+
+function Newton:OnSelectLogLevelFormClose( wndHandler, wndControl, eMouseButton )
+	local wndForm = wndControl:GetParent() 
+	wndForm:Close()
+end
+
+
+function Newton:LogLevelSelectSignal( wndHandler, wndControl, eMouseButton )
+	if wndHandler ~= wndControl then
+		return
+	end
+
+	wndControl:GetParent():Close()	
+		
+	local text = wndControl:GetText()
+	self.strLogLevel = text
+	self.log:SetLevel(text)	
+	self.wndMain:FindChild("LogLevelButton"):SetText(text)
+end
+
 
