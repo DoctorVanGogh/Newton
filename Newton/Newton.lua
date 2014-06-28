@@ -35,7 +35,7 @@ local inspect
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
-local Newton = Apollo.GetPackage("Gemini:Addon-1.0").tPackage:NewAddon(
+local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																NAME, 
 																true, 
 																{ 
@@ -350,7 +350,7 @@ end
 -----------------------------------------------------------------------------------------------
 -- Persistence
 -----------------------------------------------------------------------------------------------
-function Newton:OnSaveSettings(eLevel)
+function Newton:OnSave(eLevel)
 	glog:debug("OnSaveSettings(%s)", tostring(eLevel))	
 	
 	-- We save at character level,
@@ -376,7 +376,7 @@ function Newton:OnSaveSettings(eLevel)
 end
 
 
-function Newton:OnRestoreSettings(eLevel, tSavedData)
+function Newton:OnRestore(eLevel, tSavedData)
 	glog:debug("OnRestoreSettings(%s)=%s", tostring(eLevel), inspect(tSavedData))	
 
 	-- We restore at character level,

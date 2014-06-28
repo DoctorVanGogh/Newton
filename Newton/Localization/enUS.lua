@@ -11,4 +11,3 @@ L["Log Level"] = true
 L["Levels:"] = true
 L["Player not a scientist - consider disabling Addon %s for this character!"] = true
 L["Not a scientist - configuration disabled!"] = true
-
