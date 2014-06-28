@@ -10,3 +10,9 @@
 [submodule "GeminiLocale"]
 	path = Newton/Lib/GeminiLocale
 	url = https://github.com/wildstarnasa/GeminiLocale.git
+[submodule "Newton/lib/Loop"]
+	path = Newton/lib/Loop
+	url = git@github.com:DoctorVanGogh/Loop.git
+[submodule "Newton/lib/CallbackHandler"]
+	path = Newton/lib/CallbackHandler
+	url = https://github.com/wildstarnasa/CallbackHandler.git
