@@ -31,6 +31,7 @@ local ksScanbotCooldownTimer = "NewtonScanBotCoolDownTimer"
 local glog
 local GeminiLocale
 local GeminiLogging
+local inspect
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
@@ -50,6 +51,8 @@ function Newton:OnInitialize()
 		pattern = "%d [%c:%n] %l - %m",
 		appender = "GeminiConsole"
 	})	
+	
+	inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 
 	GeminiLocale = Apollo.GetPackage("Gemini:Locale-1.0").tPackage		
 	self.localization = GeminiLocale:GetLocale(NAME)
@@ -63,8 +66,9 @@ function Newton:OnInitialize()
 	--end		
 
 	self.log = glog
-		
-	Print("Load xml")
+
+	glog:debug("OnInitialize")
+	
     -- load our form file
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
@@ -347,12 +351,13 @@ end
 -- Persistence
 -----------------------------------------------------------------------------------------------
 function Newton:OnSaveSettings(eLevel)
+	glog:debug("OnSaveSettings(%s)", tostring(eLevel))	
+	
 	-- We save at character level,
 	if (eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character) then
 		return
 	end
 
-	glog:debug("OnSaveSettings")	
 		
 	local tSave = { 
 		version = {
@@ -364,19 +369,21 @@ function Newton:OnSaveSettings(eLevel)
 		bPersistScanbot = self:GetPersistScanbot(),
 		strLogLevel = self.strLogLevel
 	}
+		
+	glog:debug("Persist: %s", inspect(tSave))
 	
 	return tSave
 end
 
 
 function Newton:OnRestoreSettings(eLevel, tSavedData)
+	glog:debug("OnRestoreSettings(%s)=%s", tostring(eLevel), inspect(tSavedData))	
+
 	-- We restore at character level,
 	if (eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character) then
 		return
 	end
-	
-	glog:debug("OnRestoreSettings")
-	
+
 	if not tSavedData or tSavedData.version.MAJOR ~= MAJOR then
 		self:SetAutoSummonScanbot(true)
 		self:SetPersistScanbot(true)

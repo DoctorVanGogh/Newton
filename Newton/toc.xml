@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Addon Author="DoctorVanGogh" APIVersion="8" Name="Newton" Description="Scientist Utility: Remembers which Scanbot you had picked, and auto-summons it.">
-    <Script Name="GeminiLogging/inspect.lua"/>
-    <Script Name="GeminiLogging/GeminiLogging.lua"/>
-    <Script Name="GeminiAddon/GeminiAddon.lua"/>
-    <Script Name="GeminiHook/GeminiHook-1.0.lua"/>
-    <Script Name="GeminiLocale/GeminiLocale.lua"/>
+    <Script Name="lib/GeminiLogging/inspect.lua"/>
+    <Script Name="lib/GeminiLogging/GeminiLogging.lua"/>
+    <Script Name="lib/GeminiAddon/GeminiAddon.lua"/>
+    <Script Name="lib/GeminiHook/GeminiHook-1.0.lua"/>
+    <Script Name="lib/GeminiLocale/GeminiLocale.lua"/>
     <Script Name="Localization/enUS.lua"/>
     <Script Name="Localization/deDE.lua"/>
-    <Script Name="Localization/frFR.lua"/>	
+    <Script Name="Localization/frFR.lua"/>
     <Script Name="Newton.lua"/>
     <Form Name="NewtonForm.xml"/>
 </Addon>

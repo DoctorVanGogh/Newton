@@ -1,12 +1,12 @@
 [submodule "GeminiAddon"]
-	path = GeminiAddon
+	path = Newton/Lib/GeminiAddon
 	url = https://github.com/wildstarnasa/GeminiAddon.git
 [submodule "GeminiHook"]
-	path = GeminiHook
+	path = Newton/Lib/GeminiHook
 	url = https://github.com/wildstarnasa/GeminiHook.git
 [submodule "GeminiLogging"]
-	path = GeminiLogging
+	path = Newton/Lib/GeminiLogging
 	url = https://github.com/wildstarnasa/GeminiLogging.git
 [submodule "GeminiLocale"]
-	path = GeminiLocale
+	path = Newton/Lib/GeminiLocale
 	url = https://github.com/wildstarnasa/GeminiLocale.git
