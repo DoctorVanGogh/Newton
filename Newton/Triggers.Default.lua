@@ -19,7 +19,6 @@ end
 
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
-local glog
 
 local Trigger = APkg and APkg.tPackage
 
@@ -28,9 +27,19 @@ if not Trigger then
 	Trigger = oo.class(o, TriggerBase)
 end
 
-function Trigger:__init() 
-	self:OnUpdateScanbotSummonStatus()
+function Trigger:__init(o) 
+	self.log:debug("Trigger(Default):__init")
+	-- base class properties are not fully registered until this methods completes - so cannot perform any logic here, need to do things on next frame
+	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", self)			
+		
+	return oo.rawnew(self, o)
+end
 
+function Trigger:DelayedInitialize()
+	self.log:debug("DelayedInitialize")
+
+	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
+	
 	self.bScanbotOnCooldown = false
 	
 	if self:IsEnabled() then
@@ -38,26 +47,16 @@ function Trigger:__init()
 		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", self)		
 		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)				
 		self.bEventsRegistered = true		
-	end
-end
-
-
-function Trigger:OnLoad()
-	-- import GeminiLogging
-	local GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
-	glog = GeminiLogging:GetLogger({
-		level = GeminiLogging.DEBUG,
-		pattern = "%d [%c:%n] %l - %m",
-		appender = "GeminiConsole"
-	})	
+	end	
 	
-	self.log = glog
+	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", self)	
 	
-	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", self)
+	self:OnUpdateScanbotSummonStatus()
 end
 
 
 function Trigger:GetShouldSummonBot()
+	self.log:debug("Trigger(Default):GetShouldSummonBot()")
 	return not self.bScanbotOnCooldown
 end
 
@@ -117,7 +116,6 @@ Apollo.RegisterPackage(
 	MAJOR, 
 	MINOR, 
 	{	
-		"Gemini:Logging-1.2",
 		"DoctorVanGogh:Newton:Triggers:Base",
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}

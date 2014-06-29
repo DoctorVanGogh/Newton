@@ -87,7 +87,8 @@ function Newton:OnEnable()
 
 	self.ready = true
 	self.trigger = TriggerDefault{}
-	self.trigger.callbacks:RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	self.trigger:GetCallbacks():RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	self:OnScanbotStatusUpdated(true)
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
