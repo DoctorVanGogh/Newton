@@ -6,6 +6,7 @@
     <Script Name="lib/GeminiHook/GeminiHook-1.0.lua"/>
     <Script Name="lib/GeminiLocale/GeminiLocale.lua"/>
 	<Script Name="lib/CallbackHandler/CallbackHandler-1.0.lua" />
+    <Script Name="lib/GeminiDB/GeminiDB-1.0.lua"/>	
     <Script Name="lib/Loop/base.lua"/>
     <Script Name="lib/Loop/table.lua"/>
     <Script Name="lib/Loop/collection/ObjectCache.lua"/>
@@ -16,6 +17,8 @@
     <Script Name="Localization/enUS.lua"/>
     <Script Name="Localization/deDE.lua"/>
     <Script Name="Localization/frFR.lua"/>
+    <Script Name="Triggers.Base.lua"/>
+    <Script Name="Triggers.Default.lua"/>	
     <Script Name="Newton.lua"/>
     <Form Name="NewtonForm.xml"/>
 </Addon>

@@ -16,3 +16,6 @@
 [submodule "Newton/lib/CallbackHandler"]
 	path = Newton/lib/CallbackHandler
 	url = https://github.com/wildstarnasa/CallbackHandler.git
+[submodule "Newton/lib/GeminiDB"]
+	path = Newton/lib/GeminiDB
+	url = https://github.com/wildstarnasa/GeminiDB.git

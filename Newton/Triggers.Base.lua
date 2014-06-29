@@ -26,13 +26,13 @@ end
 
 Trigger.Event_UpdateScanbotSummonStatus = "UpdateScanbotSummonStatus"
 
--- Return values: true/false/nil		- true = 'should summon', false = 'must not summon', nil = 'no judgement'
+-- Return values: true/false/nil		- true = 'should summon', false = 'must not summon', nil = 'indterminate'
 function Trigger:GetShouldSummonBot()
 	return nil
 end
 
-function Trigger:OnUpdateScanbotSummonStatus()	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
-	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus)
+function Trigger:OnUpdateScanbotSummonStatus(bForceRestore)	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
+	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus, bForceRestore)
 end
 
 function Trigger:Enable(bEnable)

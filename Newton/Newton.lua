@@ -32,6 +32,8 @@ local glog
 local GeminiLocale
 local GeminiLogging
 local inspect
+local TriggerDefault
+
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
@@ -40,7 +42,8 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																true, 
 																{ 
 																	"Gemini:Logging-1.2",
-																	"Gemini:Locale-1.0"
+																	"Gemini:Locale-1.0",
+																	"DoctorVanGogh:Newton:Triggers:Default"
 																}, 
 																"Gemini:Hook-1.0")
 
@@ -73,11 +76,8 @@ function Newton:OnInitialize()
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
-
-	-- Do additional Addon initialization here		
-	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", self)
-	
-	self.bScanbotOnCooldown = false			
+	TriggerDefault = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
+			
 end
 
 
@@ -86,14 +86,8 @@ function Newton:OnEnable()
 	glog:debug("OnEnable")
 
 	self.ready = true
-	if GameLib.IsCharacterLoaded() and self:GetAutoSummonScanbot() then
-		if not self:GetScanbotOnCooldown() then
-			self:TrySummonScanbot(nil, true)
-		end
-	else
-		glog:debug("Character not yet created - delaying bot summon")
-		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNewtonUpdate", self)
-	end
+	self.trigger = TriggerDefault{}
+	self.trigger.callbacks:RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
@@ -162,17 +156,6 @@ end
 -- Newton logic
 -----------------------------------------------------------------------------------------------
 
-function Newton:OnPlayerPathScientistScanBotCooldown(fTime) -- iTime is cooldown time in MS (5250)
-	glog:debug("OnPlayerPathScientistScanBotCooldown(%f)", fTime)
-
-	fTime = math.max(1, fTime) -- TODO TEMP Lua Hack until fTime is valid
-	Apollo.CreateTimer(ksScanbotCooldownTimer, fTime, false)
-	self:SetScanbotOnCooldown(true)
-end
-
-function Newton:OnScanBotCoolDownTimer()
-	self:SetScanbotOnCooldown(false)
-end
 
 function Newton:GetAutoSummonScanbot()
 	return self.bAutoSummonScanbot or false
@@ -180,9 +163,8 @@ end
 
 function Newton:SetAutoSummonScanbot(bValue)
 	glog:debug(
-		"SetAutoSummonScanbot(%s) - cooldown=%s,isloaded=%s", 
-		tostring(bValue), 
-		tostring(self:GetScanbotOnCooldown()), 
+		"SetAutoSummonScanbot(%s) - isloaded=%s", 
+		tostring(bValue), 		
 		tostring(GameLib.IsCharacterLoaded())		
 	)
 
@@ -192,39 +174,23 @@ function Newton:SetAutoSummonScanbot(bValue)
 	
 	self.bAutoSummonScanbot = bValue
 
-	if bValue then	
-		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", self)	
-		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", self)
-		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)			
-		
-			
-		if not self:GetScanbotOnCooldown() then
-			self:TrySummonScanbot(nil)
-		end
-	else
-		Apollo.RemoveEventHandler("ChangeWorld", self)	
-		Apollo.RemoveEventHandler("CombatLogMount", self)
-		Apollo.RemoveEventHandler("PlayerPathScientistScanBotCooldown", self)			
-	end
 end
 
-
-function Newton:OnChangeWorld()
-	glog:debug("OnChangeWorld: IsCharacterLoaded=%s, self=%s", tostring(GameLib.IsCharacterLoaded()),tostring(self))
+function Newton:OnScanbotStatusUpdated(bForceRestore)
+	glog:debug("OnScanbotStatusUpdated(%s)", tostring(bForceRestore))
+	local bShouldSummonBot = self.trigger:GetShouldSummonBot()
 	
-	if self == nil or not self.ready then
-		return
-	end
-
 	if GameLib.IsCharacterLoaded() then
-		if not self:GetScanbotOnCooldown() then
-			self:TrySummonScanbot()
-		end
+		self:TrySummonScanbot(bShouldSummonBot, bForceRestore)
 	else
-		glog:debug("Character not yet created - delaying bot summon")
-		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNewtonUpdate", self)
+		if bForceRestore then
+			self.bForceRestore = bForceRestore
+		end
+		glog:debug("Character not yet created - delaying (de)summon")
+		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNewtonUpdate", self)		
 	end
 end
+
 
 function Newton:OnNewtonUpdate()
 	local bIsCharacterLoaded = GameLib.IsCharacterLoaded()
@@ -240,55 +206,26 @@ function Newton:OnNewtonUpdate()
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 end
 
-function Newton:OnCombatLogMount(tEventArgs)
-	glog:debug("OnCombatLogMount, dismounted=%s", tostring(tEventArgs.bDismounted))
-
-	if tEventArgs.bDismounted and self:GetAutoSummonScanbot() and not self:GetScanbotOnCooldown()  then
-		self:TrySummonScanbot(true)
-	end
-end
-
-function Newton:GetScanbotOnCooldown()
-	return self.bScanbotOnCooldown 
-end
-
-
-function Newton:SetScanbotOnCooldown(bValue)
-	glog:debug("SetScanbotOnCooldown(%s)", tostring(bValue))
-
-	if self.bScanbotOnCooldown == bValue then
-		return
-	end	
-	
-	self.bScanbotOnCooldown = bValue
-
-	if not self.bScanbotOnCooldown and self:GetAutoSummonScanbot() then
-		self:TrySummonScanbot()
-	end
-end
 
 function Newton:TrySummonScanbot(bSummon, bForceRestore)
 	glog:debug("TrySummonScanbot(%s, %s)", tostring(bSummon), tostring(bForceUpdate))
 
 	self:RestoreScanbot(bForceRestore)
 
-	if not self:GetScanbotOnCooldown() then
-		local player = GameLib.GetPlayerUnit()
-		
-		if player then
-			if bSummon == nil then
-				bSummon = not player:IsMounted()
-			end
-		
+	local player = GameLib.GetPlayerUnit()
+	
+	if player then
+		if bSummon ~= nil then		
 			self:SummonScanbot(bSummon)
 		end
 	end
+	
 end
 
 function Newton:SummonScanbot(bSummon)
 	glog:debug("SummonScanbot(%s)", tostring(bSummon))
 
-	if bSummon and not PlayerPathLib.ScientistHasScanBot() then	
+	if bSummon ~= PlayerPathLib.ScientistHasScanBot() then	
 		PlayerPathLib.ScientistToggleScanBot()	
 	end	
 end
