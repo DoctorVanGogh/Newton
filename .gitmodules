@@ -19,3 +19,6 @@
 [submodule "Newton/lib/GeminiDB"]
 	path = Newton/lib/GeminiDB
 	url = https://github.com/wildstarnasa/GeminiDB.git
+[submodule "Newton/lib/LibError"]
+	path = Newton/lib/LibError
+	url = https://github.com/wildstarnasa/LibError.git

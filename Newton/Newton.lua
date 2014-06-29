@@ -87,7 +87,7 @@ function Newton:OnEnable()
 
 	self.ready = true
 	self.trigger = TriggerDefault{}
-	self.trigger:GetCallbacks():RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	self.trigger.RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 	self:OnScanbotStatusUpdated(true)
 end
 
@@ -177,8 +177,8 @@ function Newton:SetAutoSummonScanbot(bValue)
 
 end
 
-function Newton:OnScanbotStatusUpdated(bForceRestore)
-	glog:debug("OnScanbotStatusUpdated(%s)", tostring(bForceRestore))
+function Newton:OnScanbotStatusUpdated()
+	glog:debug("OnScanbotStatusUpdated()")
 	local bShouldSummonBot = self.trigger:GetShouldSummonBot()
 	
 	if GameLib.IsCharacterLoaded() then

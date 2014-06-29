@@ -12,6 +12,7 @@ if APkg and (APkg.nVersion or 0) >= MINOR then
 end
 
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Base").tPackage
+local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local glog
 
 local Trigger = APkg and APkg.tPackage
@@ -19,10 +20,20 @@ local Trigger = APkg and APkg.tPackage
 -- Base only defines callbacks and GetShouldSummonBot method
 if not Trigger then
 	local o = {	}	
+	o.enabled = true
 	Trigger = oo.class{ o }
 end
 
 Trigger.Event_UpdateScanbotSummonStatus = "UpdateScanbotSummonStatus"
+
+function Trigger:__init(o)
+	self.log:debug("__init(%s)", inspect(o))
+	o = o or {}
+	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
+	--o.enabled = true
+	
+	return oo.rawnew(self, o)
+end
 
 
 function Trigger:OnLoad()
@@ -38,11 +49,7 @@ function Trigger:OnLoad()
 end
 
 
-function Trigger:GetCallbacks()
-	if not self.callbacks then
-		self.callbacks = Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)	
-	end
-	
+function Trigger:GetCallbacks()	
 	return self.callbacks;
 end
 
@@ -55,7 +62,7 @@ end
 function Trigger:OnUpdateScanbotSummonStatus()	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
 	self.log:debug("Trigger:OnUpdateScanbotSummonStatus")
 
-	self:GetCallbacks():Fire(Trigger.Event_UpdateScanbotSummonStatus)
+	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus)
 	self.log:debug("Trigger:OnUpdateScanbotSummonStatus DONE")
 	
 end

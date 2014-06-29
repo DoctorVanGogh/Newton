@@ -23,20 +23,20 @@ local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPac
 local Trigger = APkg and APkg.tPackage
 
 if not Trigger then
-	local o = { }
-	Trigger = oo.class(o, TriggerBase)
+	Trigger = oo.class({}, TriggerBase)
 end
 
 function Trigger:__init(o) 
 	self.log:debug("Trigger(Default):__init")
+	TriggerBase:__init(o)
 	-- base class properties are not fully registered until this methods completes - so cannot perform any logic here, need to do things on next frame
-	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", self)			
+	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", self)		
 		
 	return oo.rawnew(self, o)
 end
 
 function Trigger:DelayedInitialize()
-	self.log:debug("DelayedInitialize")
+	self.log:debug("DelayedInitialize - %s", tostring(self:IsEnabled()))
 
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 	
