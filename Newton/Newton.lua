@@ -10,17 +10,6 @@ require "ScientistScanBotProfile"
 -----------------------------------------------------------------------------------------------
 -- Constants
 -----------------------------------------------------------------------------------------------
-local GetScanbotProfileIndexFromProfile = function(currentProfile)
-	if currentProfile == nil then
-		return nil
-	end
-	for idx, profile in ipairs(PlayerPathLib.ScientistAllGetScanBotProfiles()) do
-		if currentProfile == profile then
-			return idx			
-		end		
-	end
-end 
-
 local kstrDefaultLogLevel = "WARN"
 local kstrInitNoScientistWarning = "Player not a scientist - consider disabling Addon %s for this character!"
 local kstrConfigNoScientistWarning = "Not a scientist - configuration disabled!"
@@ -33,6 +22,7 @@ local GeminiLocale
 local GeminiLogging
 local inspect
 local TriggerDefault
+local ScanbotManager
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -43,9 +33,10 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																{ 
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",
-																	"DoctorVanGogh:Newton:Triggers:Default"
-																}, 
-																"Gemini:Hook-1.0")
+																	"DoctorVanGogh:Newton:Triggers:Default",
+																	"DoctorVanGogh:Newton:ScanbotManager"
+																}
+															)
 
 function Newton:OnInitialize()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
@@ -77,7 +68,7 @@ function Newton:OnInitialize()
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
 	TriggerDefault = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
-			
+	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 end
 
 
@@ -86,9 +77,12 @@ function Newton:OnEnable()
 	glog:debug("OnEnable")
 
 	self.ready = true
+	
+	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
+	
 	self.trigger = TriggerDefault{}
 	self.trigger.RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
-	self:OnScanbotStatusUpdated(true)
+	self:OnScanbotStatusUpdated(true)		
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
@@ -186,7 +180,7 @@ function Newton:OnScanbotStatusUpdated(bForceRestore)
 	end
 	
 	if GameLib.IsCharacterLoaded() then
-		self:TrySummonScanbot(eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
+		self.scanbotManager:SummonBot(eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
 	else
 		if bForceRestore then
 			self.bForceRestore = bForceRestore
@@ -212,88 +206,27 @@ function Newton:OnNewtonUpdate()
 		self.bForceRestore = nil
 	end
 		
-	self:TrySummonScanbot(self.eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
+	self.scanbotManager:SummonBot(self.eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
 	
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 end
 
 
-function Newton:TrySummonScanbot(bSummon, bForceRestore)
-	glog:debug("TrySummonScanbot(%s, %s)", tostring(bSummon), tostring(bForceUpdate))
-
-	self:RestoreScanbot(bForceRestore)
-
-	local player = GameLib.GetPlayerUnit()
-	
-	if player then
-		if bSummon ~= nil then		
-			self:SummonScanbot(bSummon)
-		end
-	end
-	
-end
-
-function Newton:SummonScanbot(bSummon)
-	glog:debug("SummonScanbot(%s)", tostring(bSummon))
-
-	if bSummon ~= PlayerPathLib.ScientistHasScanBot() then	
-		PlayerPathLib.ScientistToggleScanBot()	
-	end	
-end
-
-
 -- persistence logic
-
 function Newton:GetPersistScanbot()
 	return self.bPersistScanbot
 end
 
-function Newton:SetPersistScanbot(bValue, nScanbotProfileIndex)
-	glog:debug("SetPersistScanbot(%s, %s)", tostring(bValue), tostring(nScanbotProfileIndex))
+function Newton:SetPersistScanbot(bValue)
+	glog:debug("SetPersistScanbot(%s)", tostring(bValue))
 
 	if bValue == self:GetPersistScanbot() then
 		return
 	end
 	
 	self.bPersistScanbot = bValue
-	
-	if bValue then
-		self.nScanbotProfileIndex = nScanbotProfileIndex or GetScanbotProfileIndexFromProfile(PlayerPathLib.ScientistGetScanBotProfile())
-		if not self:IsHooked(PlayerPathLib, "ScientistSetScanBotProfile") then
-			self:PostHook(PlayerPathLib, "ScientistSetScanBotProfile")	
-		end
-	end	
 end
 
-
-function Newton:RestoreScanbot(bForceRestore)
-
-	glog:debug("RestoreScanbot(%s)", tostring(bForceRestore))
-
-		
-	local currentProfile = PlayerPathLib.ScientistGetScanBotProfile()	
-	-- check if correct bot already selected
-	if bForceRestore or (currentProfile and GetScanbotProfileIndexFromProfile(currentProfile) ~= self.nScanbotProfileIndex) then					
-		--  select correct bot
-		local profile = PlayerPathLib.ScientistAllGetScanBotProfiles()[self.nScanbotProfileIndex]			
-		if profile then		
-			PlayerPathLib.ScientistSetScanBotProfile(profile)
-		end			
-	end		
-end
-
-
-
-function Newton:ScientistSetScanBotProfile(tProfile)
-	local index =  GetScanbotProfileIndexFromProfile(tProfile)
-
-	local persist = self:GetPersistScanbot()
-	glog:debug("ScientistSetScanBotProfile(%i) - persist=%s", index, tostring(persist))
-
-	if persist then	
-		self.nScanbotProfileIndex = index
-	end
-end
 
 -----------------------------------------------------------------------------------------------
 -- Persistence
@@ -312,7 +245,7 @@ function Newton:OnSave(eLevel)
 			MAJOR = MAJOR,
 			MINOR = MINOR
 		}, 
-		nScanbotProfileIndex = self.nScanbotProfileIndex,
+		nScanbotProfileIndex = self.scanbotManager:GetScanbotIndex(),
 		bAutoSummonScanbot = self:GetAutoSummonScanbot(),
 		bPersistScanbot = self:GetPersistScanbot(),
 		strLogLevel = self.strLogLevel
@@ -338,7 +271,8 @@ function Newton:OnRestore(eLevel, tSavedData)
 		self.strLogLevel = kstrDefaultLogLevel		
 	else
 		self:SetAutoSummonScanbot(tSavedData.bAutoSummonScanbot or false)
-		self:SetPersistScanbot(tSavedData.bPersistScanbot or false, tSavedData.nScanbotProfileIndex)
+		self:SetPersistScanbot(tSavedData.bPersistScanbot)
+		self.nPersistedScanbotIndex = tSavedData.nScanbotProfileIndex
 		self.strLogLevel = tSavedData.strLogLevel or kstrDefaultLogLevel		
 	end	
 	

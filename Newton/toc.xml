@@ -20,6 +20,7 @@
     <Script Name="Localization/frFR.lua"/>
     <Script Name="Triggers.Base.lua"/>
     <Script Name="Triggers.Default.lua"/>	
+    <Script Name="ScanbotManager.lua"/>		
     <Script Name="Newton.lua"/>
     <Form Name="NewtonForm.xml"/>
 </Addon>

@@ -17,7 +17,6 @@ local glog
 
 local Trigger = APkg and APkg.tPackage
 
--- Base only defines callbacks and GetShouldSummonBot method
 if not Trigger then
 	local o = {	}	
 	o.enabled = true
@@ -91,6 +90,7 @@ Apollo.RegisterPackage(
 	MAJOR, 
 	MINOR, 
 	{
+		"Drafto:Lib:inspect-1.2",
 		"Gemini:Logging-1.2",	
 		"DoctorVanGogh:Lib:Loop:Base",
 		"Gemini:CallbackHandler-1.0"
