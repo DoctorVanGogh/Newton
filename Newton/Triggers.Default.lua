@@ -28,31 +28,33 @@ if not Trigger then
 end
 
 function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")	
+	self.log:debug("Trigger:__init()")
+	
+	o = o or {}
 	TriggerBase:__init(o)
-	-- base class properties are not fully registered until this methods completes - so cannot perform any logic here, need to do things on next frame
-	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", o)		
-		
+	
+	o:SetAction(TriggerBase.SummoningChoice.Summon)
+	
+	o.bScanbotOnCooldown = false
+	
+	if o:IsEnabled() then
+		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", o)	
+		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", o)		
+		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", o)				
+		o.bEventsRegistered = true		
+	end	
+	
+	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", o)	
+	
+	o:OnUpdateScanbotSummonStatus()	
+	
 	return oo.rawnew(self, o)
 end
 
 function Trigger:DelayedInitialize()
 	self.log:debug("DelayedInitialize - %s", tostring(self:IsEnabled()))
 
-	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
-	
-	self.bScanbotOnCooldown = false
-	
-	if self:IsEnabled() then
-		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", self)	
-		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", self)		
-		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)				
-		self.bEventsRegistered = true		
-	end	
-	
-	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", self)	
-	
-	self:OnUpdateScanbotSummonStatus()
+	Apollo.RemoveEventHandler("VarChange_FrameCount", self)		
 end
 
 
@@ -62,7 +64,7 @@ function Trigger:GetShouldSummonBot()
 	if self.bScanbotOnCooldown then
 		return nil
 	else
-		return TriggerBase.SummoningChoice.Summon	
+		return self:GetAction()	
 	end
 end
 

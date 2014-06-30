@@ -22,6 +22,7 @@ local GeminiLocale
 local GeminiLogging
 local inspect
 local TriggerDefault
+local TriggerCascade
 local ScanbotManager
 
 -----------------------------------------------------------------------------------------------
@@ -33,6 +34,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																{ 
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",
+																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
 																	"DoctorVanGogh:Newton:Triggers:Default",
 																	"DoctorVanGogh:Newton:ScanbotManager"
 																}
@@ -68,6 +70,7 @@ function Newton:OnInitialize()
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
 	TriggerDefault = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
+	TriggerCascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 end
 
@@ -80,7 +83,10 @@ function Newton:OnEnable()
 	
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
 	
-	self.trigger = TriggerDefault{}
+	
+	
+	self.trigger = TriggerCascade()
+	self.trigger:Add(TriggerDefault())	
 	self.trigger.RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 	self:OnScanbotStatusUpdated(true)		
 end

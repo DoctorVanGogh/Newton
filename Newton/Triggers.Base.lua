@@ -85,6 +85,19 @@ function Trigger:IsEnabled()
 end
 
 
+function Trigger:GetAction()
+	return self.eAction
+end
+
+function Trigger:SetAction(eAction)
+	if self.eAction == eAction then return end
+		
+	self.eAction = eAction
+	
+	self:OnUpdateScanbotSummonStatus()
+end
+
+
 Apollo.RegisterPackage(
 	Trigger, 
 	MAJOR, 
