@@ -26,11 +26,17 @@ end
 
 Trigger.Event_UpdateScanbotSummonStatus = "UpdateScanbotSummonStatus"
 
+Trigger.SummoningChoice = {
+	Summon = 0,
+	Dismiss = 1,
+	NoAction = 2		-- different from 'nil' insofar as 'nil' will fall through to next clause in chain, NoAction will stop (used for 'manual only') setting
+}
+
 function Trigger:__init(o)
-	self.log:debug("__init(%s)", inspect(o))
+	self.log:debug("Trigger:__init()")	
 	o = o or {}
 	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
-	--o.enabled = true
+	o.enabled = true
 	
 	return oo.rawnew(self, o)
 end
@@ -53,7 +59,10 @@ function Trigger:GetCallbacks()
 	return self.callbacks;
 end
 
--- Return values: true/false/nil		- true = 'should summon', false = 'must not summon', nil = 'indterminate'
+--- Return this trigger's decision on bot summoming.
+-- Will return one of the Trigger.SummoningChoice values or nil trigger has no choice to make
+-- @return nil or one of the Trigger.SummoningChoice fields
+-- @see Trigger.SummoningChoices
 function Trigger:GetShouldSummonBot()
 	self.log:debug("Trigger(Base):GetShouldSummonBot()")
 	return nil
@@ -62,9 +71,7 @@ end
 function Trigger:OnUpdateScanbotSummonStatus()	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
 	self.log:debug("Trigger:OnUpdateScanbotSummonStatus")
 
-	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus)
-	self.log:debug("Trigger:OnUpdateScanbotSummonStatus DONE")
-	
+	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus)	
 end
 
 function Trigger:Enable(bEnable)

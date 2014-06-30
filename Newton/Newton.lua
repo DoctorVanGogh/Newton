@@ -177,16 +177,21 @@ function Newton:SetAutoSummonScanbot(bValue)
 
 end
 
-function Newton:OnScanbotStatusUpdated()
+function Newton:OnScanbotStatusUpdated(bForceRestore)
 	glog:debug("OnScanbotStatusUpdated()")
-	local bShouldSummonBot = self.trigger:GetShouldSummonBot()
+	local eShouldSummonBot = self.trigger:GetShouldSummonBot()
+	
+	if eShouldSummonBot == nil or eShouldSummonBot == TriggerDefault.SummoningChoice.NoAction then
+		return
+	end
 	
 	if GameLib.IsCharacterLoaded() then
-		self:TrySummonScanbot(bShouldSummonBot, bForceRestore)
+		self:TrySummonScanbot(eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
 	else
 		if bForceRestore then
 			self.bForceRestore = bForceRestore
 		end
+		self.eShouldSummonBot = eShouldSummonBot
 		glog:debug("Character not yet created - delaying (de)summon")
 		Apollo.RegisterEventHandler("VarChange_FrameCount", "OnNewtonUpdate", self)		
 	end
@@ -201,8 +206,13 @@ function Newton:OnNewtonUpdate()
 	if not bIsCharacterLoaded then
 		return
 	end
+	
+	local bForceRestore = self.bForceRestore
+	if bForceRestore ~= nil then
+		self.bForceRestore = nil
+	end
 		
-	self:TrySummonScanbot(nil, true)
+	self:TrySummonScanbot(self.eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
 	
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 end

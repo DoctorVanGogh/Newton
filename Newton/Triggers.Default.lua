@@ -18,6 +18,7 @@ if APkg and (APkg.nVersion or 0) >= MINOR then
 end
 
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
+local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
 
 local Trigger = APkg and APkg.tPackage
@@ -27,10 +28,10 @@ if not Trigger then
 end
 
 function Trigger:__init(o) 
-	self.log:debug("Trigger(Default):__init")
+	self.log:debug("Trigger:__init()")	
 	TriggerBase:__init(o)
 	-- base class properties are not fully registered until this methods completes - so cannot perform any logic here, need to do things on next frame
-	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", self)		
+	Apollo.RegisterEventHandler("VarChange_FrameCount", "DelayedInitialize", o)		
 		
 	return oo.rawnew(self, o)
 end
@@ -57,7 +58,12 @@ end
 
 function Trigger:GetShouldSummonBot()
 	self.log:debug("Trigger(Default):GetShouldSummonBot()")
-	return not self.bScanbotOnCooldown
+	
+	if self.bScanbotOnCooldown then
+		return nil
+	else
+		return TriggerBase.SummoningChoice.Summon	
+	end
 end
 
 function Trigger:OnEnabledChanged()
@@ -116,6 +122,7 @@ Apollo.RegisterPackage(
 	MAJOR, 
 	MINOR, 
 	{	
+		"Drafto:Lib:inspect-1.2",
 		"DoctorVanGogh:Newton:Triggers:Base",
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
