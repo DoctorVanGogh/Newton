@@ -37,7 +37,9 @@ function Trigger:__init(o)
 	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
 	o.enabled = true
 		
-	return oo.rawnew(self, o)
+	local result = oo.rawnew(self, o)
+	
+	return result
 end
 
 
@@ -52,7 +54,6 @@ function Trigger:OnLoad()
 	
 	self.log = glog
 end
-
 
 function Trigger:GetCallbacks()	
 	return self.callbacks;

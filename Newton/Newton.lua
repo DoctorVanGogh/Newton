@@ -22,6 +22,7 @@ local GeminiLocale
 local GeminiLogging
 local inspect
 local Triggers = {}
+local SummoningChoice
 local ScanbotManager
 
 -----------------------------------------------------------------------------------------------
@@ -32,7 +33,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																true, 
 																{ 
 																	"Gemini:Logging-1.2",
-																	"Gemini:Locale-1.0",
+																	"Gemini:Locale-1.0",																
 																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
 																	"DoctorVanGogh:Newton:Triggers:Group",
 																	"DoctorVanGogh:Newton:Triggers:Instance",
@@ -78,6 +79,8 @@ function Newton:OnInitialize()
 	Triggers.PvpMatch = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:PvpMatch").tPackage
 	
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
+	
+	SummoningChoice = Triggers.Default.SummoningChoice
 end
 
 
@@ -91,11 +94,13 @@ function Newton:OnEnable()
 	
 		
 	self.trigger = Triggers.Cascade()
-	--self.trigger:Add(Triggers.Group())	
-	--self.trigger:Add(Triggers.PvpMatch())	
-	--self.trigger:Add(Triggers.Instance())			
+
+	self.trigger:Add(Triggers.Group())	
+	self.trigger:Add(Triggers.PvpMatch())	
+	self.trigger:Add(Triggers.Instance())			
 	self.trigger:Add(Triggers.Default())	
-	self.trigger.RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	
+	self.trigger.RegisterCallback(self, Triggers.Default.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 	
 	self:OnScanbotStatusUpdated(true)		
 end
@@ -189,13 +194,14 @@ end
 function Newton:OnScanbotStatusUpdated(bForceRestore)
 	glog:debug("OnScanbotStatusUpdated()")
 	local eShouldSummonBot = self.trigger:GetShouldSummonBot()
+	glog:debug("  Summon action: %s", tostring(eShouldSummonBot))
 	
-	if eShouldSummonBot == nil or eShouldSummonBot == TriggerDefault.SummoningChoice.NoAction then
+	if eShouldSummonBot == nil or eShouldSummonBot == SummoningChoice.NoAction then
 		return
 	end
 	
 	if GameLib.IsCharacterLoaded() then
-		self.scanbotManager:SummonBot(eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
+		self.scanbotManager:SummonBot(eShouldSummonBot == SummoningChoice.Summon, bForceRestore)
 	else
 		if bForceRestore then
 			self.bForceRestore = bForceRestore
@@ -221,7 +227,7 @@ function Newton:OnNewtonUpdate()
 		self.bForceRestore = nil
 	end
 		
-	self.scanbotManager:SummonBot(self.eShouldSummonBot == TriggerDefault.SummoningChoice.Summon, bForceRestore)
+	self.scanbotManager:SummonBot(self.eShouldSummonBot == SummoningChoice.Summon, bForceRestore)
 	
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 end

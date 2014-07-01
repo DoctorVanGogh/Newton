@@ -37,26 +37,20 @@ function Trigger:__init(o)
 		o:SetAction(TriggerBase.SummoningChoice.Summon)
 	end
 	
-	o.bScanbotOnCooldown = false
-	
 	if o:IsEnabled() then
 		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", o)	
 		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", o)		
 		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", o)				
 		o.bEventsRegistered = true		
-	end	
+	end		
 	
+	o.bScanbotOnCooldown = false
+
 	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", o)	
 	
 	o:OnUpdateScanbotSummonStatus()	
 	
 	return oo.rawnew(self, o)
-end
-
-function Trigger:DelayedInitialize()
-	self.log:debug("DelayedInitialize - %s", tostring(self:IsEnabled()))
-
-	Apollo.RemoveEventHandler("VarChange_FrameCount", self)		
 end
 
 
