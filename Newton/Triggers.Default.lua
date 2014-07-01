@@ -32,8 +32,10 @@ function Trigger:__init(o)
 	
 	o = o or {}
 	TriggerBase:__init(o)
-	
-	o:SetAction(TriggerBase.SummoningChoice.Summon)
+
+	if o:GetAction() == nil then 	
+		o:SetAction(TriggerBase.SummoningChoice.Summon)
+	end
 	
 	o.bScanbotOnCooldown = false
 	

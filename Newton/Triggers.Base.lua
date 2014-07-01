@@ -36,7 +36,7 @@ function Trigger:__init(o)
 	o = o or {}
 	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
 	o.enabled = true
-	
+		
 	return oo.rawnew(self, o)
 end
 

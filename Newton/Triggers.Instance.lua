@@ -1,9 +1,13 @@
 -----------------------------------------------------------------------------------------------
--- Cascading bot summoning trigger
+-- Instance bot summoning trigger
 --
 -- Copyright (c) 2014 DoctorVanGogh on Wildstar forums - all rights reserved
 -----------------------------------------------------------------------------------------------
-local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Cascade", 1
+require "GroupLib"
+
+local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Instance", 1
+
+local kstrFieldNameEventsRegistered = "bEventsRegistered"
 
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(MAJOR)
@@ -26,45 +30,42 @@ function Trigger:__init(o)
 	self.log:debug("Trigger:__init()")
 	
 	o = o or {}
-	o.children = o.children or {}
 	TriggerBase:__init(o)
 	
-	if o:GetAction() == nil then 	
-		o:SetAction(TriggerBase.SummoningChoice.NoAction)
+	if o:GetAction() == nil then 
+		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 
 	end
+	
+	if o:IsEnabled() then
+		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", o)				
+		o[kstrFieldNameEventsRegistered] = true		
+	end		
 	
 	return oo.rawnew(self, o)
 end
 
-function Trigger:Add(tTrigger)
-	self.log:debug("Add")
-
-	if tTrigger == nil then
-		error("Trigger must not be nil")
+function Trigger:OnEnabledChanged()
+	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then
+		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", o)				
+		self[kstrFieldNameEventsRegistered] = true			
+	elseif not self:IsEnabled() and self[kstrFieldNameEventsRegistered] then	
+		Apollo.RemoveEventHandler("ChangeWorld", self)				
+		self[kstrFieldNameEventsRegistered] = false			
 	end
-		
-	if not oo.instanceof(tTrigger, TriggerBase) then
-		error("Can only add Triggers")
-	end
-	
-	table.insert(self.children, tTrigger)
-	
-	tTrigger.RegisterCallback(self, TriggerBase.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")	
 end
 
-function Trigger:OnChildScanbotStatusUpdated()
-	self.log:debug("OnChildScanbotStatusUpdated")
+function Trigger:OnChangeWorld()
+	self.log:debug("OnChangeWorld")
 	self:OnUpdateScanbotSummonStatus()
 end
 
 function Trigger:GetShouldSummonBot()
 	self.log:debug("GetShouldSummonBot")
 
-	for idx, tTrigger in ipairs(self.children) do
-		local childResult = tTrigger:GetShouldSummonBot()
-		if childResult then
-			return childResult
-		end
+	if GroupLib:InInstance() then
+		return self:GetAction()
+	else
+		return nil
 	end
 end
 

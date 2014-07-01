@@ -21,8 +21,7 @@ local glog
 local GeminiLocale
 local GeminiLogging
 local inspect
-local TriggerDefault
-local TriggerCascade
+local Triggers = {}
 local ScanbotManager
 
 -----------------------------------------------------------------------------------------------
@@ -35,6 +34,9 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",
 																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
+																	"DoctorVanGogh:Newton:Triggers:Group",
+																	"DoctorVanGogh:Newton:Triggers:Instance",
+																	"DoctorVanGogh:Newton:Triggers:PvpMatch",
 																	"DoctorVanGogh:Newton:Triggers:Default",
 																	"DoctorVanGogh:Newton:ScanbotManager"
 																}
@@ -69,8 +71,12 @@ function Newton:OnInitialize()
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
-	TriggerDefault = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
-	TriggerCascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
+	Triggers.Default = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
+	Triggers.Cascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
+	Triggers.Group = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Group").tPackage
+	Triggers.Instance = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Instance").tPackage
+	Triggers.PvpMatch = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:PvpMatch").tPackage
+	
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 end
 
@@ -83,11 +89,14 @@ function Newton:OnEnable()
 	
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
 	
-	
-	
-	self.trigger = TriggerCascade()
-	self.trigger:Add(TriggerDefault())	
+		
+	self.trigger = Triggers.Cascade()
+	--self.trigger:Add(Triggers.Group())	
+	--self.trigger:Add(Triggers.PvpMatch())	
+	--self.trigger:Add(Triggers.Instance())			
+	self.trigger:Add(Triggers.Default())	
 	self.trigger.RegisterCallback(self, TriggerDefault.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	
 	self:OnScanbotStatusUpdated(true)		
 end
 
