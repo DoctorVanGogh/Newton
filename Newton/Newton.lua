@@ -36,6 +36,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:Locale-1.0",																
 																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
 																	"DoctorVanGogh:Newton:Triggers:Group",
+																	"DoctorVanGogh:Newton:Triggers:Stealth",																	
 																	"DoctorVanGogh:Newton:Triggers:Instance",
 																	"DoctorVanGogh:Newton:Triggers:PvpMatch",
 																	"DoctorVanGogh:Newton:Triggers:Default",
@@ -73,6 +74,7 @@ function Newton:OnInitialize()
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
 	Triggers.Default = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
+	Triggers.Stealth = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Stealth").tPackage
 	Triggers.Cascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
 	Triggers.Group = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Group").tPackage
 	Triggers.Instance = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Instance").tPackage
@@ -94,7 +96,11 @@ function Newton:OnEnable()
 	
 		
 	self.trigger = Triggers.Cascade()
-
+	
+	local tStealth = Triggers.Stealth()
+	tStealth:Enable(false)
+	
+	self.trigger:Add(tStealth)
 	self.trigger:Add(Triggers.Group())	
 	self.trigger:Add(Triggers.PvpMatch())	
 	self.trigger:Add(Triggers.Instance())			
