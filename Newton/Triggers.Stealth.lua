@@ -56,7 +56,8 @@ function Trigger:__init(o)
 end
 
 function Trigger:OnEnabledChanged()
-	if o:IsEnabled() then
+	self.log:debug("OnEnabledChanged")
+	if self:IsEnabled() then
 		Apollo.StartTimer(kstrStealthCheckTimerName)
 	else
 		Apollo.StopTimer(kstrStealthCheckTimerName)	

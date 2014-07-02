@@ -107,12 +107,12 @@ function ScanbotManager:SetScanbotIndex(nIndex, bForceUpdate)
 	end
 end
 
-function ScanbotManager:RestoreSelectionToCurrentScanbot()
+function ScanbotManager:RestoreSelectionToCurrentScanbot(bForceRestore)
 	self.log:debug("RestoreSelectionToCurrentScanbot")
 
 	if not self[kstrFieldScanbotIndex] then return end
 	
-	RestoreScanbot(self[kstrFieldScanbotIndex], true)
+	RestoreScanbot(self[kstrFieldScanbotIndex], bForceRestore)
 end
 
 function ScanbotManager:SummonBot(bSummon, bForceRestore)
@@ -120,8 +120,7 @@ function ScanbotManager:SummonBot(bSummon, bForceRestore)
 	self:RestoreSelectionToCurrentScanbot(bForceRestore)
 
 	local player = GameLib.GetPlayerUnit()
-	self.log:debug("%s", tostring(player))
-	
+
 	if player then
 		if bSummon ~= nil then
 			SummonScanbot(bSummon)

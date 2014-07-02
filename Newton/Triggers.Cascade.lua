@@ -52,9 +52,9 @@ function Trigger:Add(tTrigger)
 	tTrigger.RegisterCallback(self, TriggerBase.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")	
 end
 
-function Trigger:OnChildScanbotStatusUpdated()
-	self.log:debug("OnChildScanbotStatusUpdated")
-	self:OnUpdateScanbotSummonStatus()
+function Trigger:OnChildScanbotStatusUpdated(event, bForceRestore)
+	self.log:debug("OnChildScanbotStatusUpdated(%s)", tostring(bForceRestore))
+	self:OnUpdateScanbotSummonStatus(bForceRestore)
 end
 
 function Trigger:GetShouldSummonBot()

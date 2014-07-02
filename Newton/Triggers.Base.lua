@@ -68,13 +68,14 @@ function Trigger:GetShouldSummonBot()
 	return nil
 end
 
-function Trigger:OnUpdateScanbotSummonStatus()	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
-	self.log:debug("Trigger:OnUpdateScanbotSummonStatus")
+function Trigger:OnUpdateScanbotSummonStatus(bForceUpdate)	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
+	self.log:debug("Trigger:OnUpdateScanbotSummonStatus(%s)", tostring(bForceUpdate))
 
-	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus)	
+	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus, bForceUpdate)	
 end
 
 function Trigger:Enable(bEnable)
+	self.log:debug("Enable(%s)", tostring(bEnable))
 	self.enabled = bEnable	
 	if self.OnEnabledChanged ~= nil then
 		self:OnEnabledChanged()

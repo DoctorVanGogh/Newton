@@ -55,7 +55,7 @@ end
 
 
 function Trigger:GetShouldSummonBot()
-	self.log:debug("Trigger(Default):GetShouldSummonBot()")
+	self.log:debug("GetShouldSummonBot()")
 	
 	if self.bScanbotOnCooldown then
 		return nil

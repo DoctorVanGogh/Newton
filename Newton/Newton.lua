@@ -93,19 +93,15 @@ function Newton:OnEnable()
 	self.ready = true
 	
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
-	
 		
 	self.trigger = Triggers.Cascade()
-	
 	local tStealth = Triggers.Stealth()
 	tStealth:Enable(false)
-	
 	self.trigger:Add(tStealth)
 	self.trigger:Add(Triggers.Group())	
 	self.trigger:Add(Triggers.PvpMatch())	
 	self.trigger:Add(Triggers.Instance())			
 	self.trigger:Add(Triggers.Default())	
-	
 	self.trigger.RegisterCallback(self, Triggers.Default.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 	
 	self:OnScanbotStatusUpdated(true)		
@@ -197,8 +193,8 @@ function Newton:SetAutoSummonScanbot(bValue)
 
 end
 
-function Newton:OnScanbotStatusUpdated(bForceRestore)
-	glog:debug("OnScanbotStatusUpdated()")
+function Newton:OnScanbotStatusUpdated(event, bForceRestore)
+	glog:debug("OnScanbotStatusUpdated(%s)", tostring(bForceRestore))
 	local eShouldSummonBot = self.trigger:GetShouldSummonBot()
 	glog:debug("  Summon action: %s", tostring(eShouldSummonBot))
 	
@@ -234,6 +230,8 @@ function Newton:OnNewtonUpdate()
 	end
 		
 	self.scanbotManager:SummonBot(self.eShouldSummonBot == SummoningChoice.Summon, bForceRestore)
+	
+	self.eShouldSummonBot = nil
 	
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
 end
