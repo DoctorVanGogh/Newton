@@ -6,6 +6,7 @@
 require "GameLib"
 require "PlayerPathLib"
 require "ScientistScanBotProfile"
+require "ApolloTimer"
 
 -----------------------------------------------------------------------------------------------
 -- Constants
@@ -14,9 +15,10 @@ local kstrDefaultLogLevel = "WARN"
 local kstrInitNoScientistWarning = "Player not a scientist - consider disabling Addon %s for this character!"
 local kstrConfigNoScientistWarning = "Not a scientist - configuration disabled!"
 
+local knEnforceSummoningActionInverval = -1
+
 local NAME = "Newton"
 local MAJOR, MINOR = NAME.."-1.0", 1
-local ksScanbotCooldownTimer = "NewtonScanBotCoolDownTimer"
 local glog
 local GeminiLocale
 local GeminiLogging
@@ -95,9 +97,7 @@ function Newton:OnEnable()
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
 		
 	self.trigger = Triggers.Cascade()
-	local tStealth = Triggers.Stealth()
-	tStealth:Enable(false)
-	self.trigger:Add(tStealth)
+	self.trigger:Add(Triggers.Stealth{enabled = false})
 	self.trigger:Add(Triggers.Group())	
 	self.trigger:Add(Triggers.PvpMatch())	
 	self.trigger:Add(Triggers.Instance())			
@@ -146,7 +146,10 @@ function Newton:OnDocumentReady()
 	self.wndMain:FindChild("LogLevelButton"):AttachWindow(self.wndLogLevelsPopup)
 	self.xmlDoc = nil	
 	
-
+	if knEnforceSummoningActionInverval > 0 then
+		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
+	end
+	
 	self:InitializeForm()
 	
 	self.wndMain:Show(false);
@@ -193,17 +196,31 @@ function Newton:SetAutoSummonScanbot(bValue)
 
 end
 
+function Newton:OnEnforceSummoningActionCheck()
+	self:OnScanbotStatusUpdated()
+end
+
 function Newton:OnScanbotStatusUpdated(event, bForceRestore)
 	glog:debug("OnScanbotStatusUpdated(%s)", tostring(bForceRestore))
 	local eShouldSummonBot = self.trigger:GetShouldSummonBot()
 	glog:debug("  Summon action: %s", tostring(eShouldSummonBot))
 	
 	if eShouldSummonBot == nil or eShouldSummonBot == SummoningChoice.NoAction then
+		if self.tSummoningEnforcementTimer then
+			self.tSummoningEnforcementTimer:Stop()	
+		end
+		if bForceRestore then
+			self.scanbotManager:ForceRestoreOnNextSummon()
+		end
+	
 		return
 	end
 	
 	if GameLib.IsCharacterLoaded() then
 		self.scanbotManager:SummonBot(eShouldSummonBot == SummoningChoice.Summon, bForceRestore)
+		if self.tSummoningEnforcementTimer then
+			self.tSummoningEnforcementTimer:Start()
+		end
 	else
 		if bForceRestore then
 			self.bForceRestore = bForceRestore

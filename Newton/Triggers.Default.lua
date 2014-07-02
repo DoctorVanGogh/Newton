@@ -8,8 +8,6 @@ require "GameLib"
 
 local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Default", 1
 
-local ksScanbotCooldownTimer = "Newton:Triggers:Default:ScanBotCoolDownTimer"
-
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(MAJOR)
 -- If there was an older version loaded we need to see if this is newer
@@ -46,7 +44,7 @@ function Trigger:__init(o)
 	
 	o.bScanbotOnCooldown = false
 
-	Apollo.RegisterTimerHandler(ksScanbotCooldownTimer, "OnScanBotCoolDownTimer", o)	
+	o.tCooldownTimer = ApolloTimer.Create(1, false, "OnScanBotCoolDownTimer", o)
 	
 	o:OnUpdateScanbotSummonStatus()	
 	
@@ -68,12 +66,13 @@ function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self.bEventsRegistered then
 		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", self)	
 		Apollo.RegisterEventHandler("CombatLogMount", "OnCombatLogMount", self)		
-		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)									
+		Apollo.RegisterEventHandler("PlayerPathScientistScanBotCooldown", "OnPlayerPathScientistScanBotCooldown", self)		
 		self.bEventsRegistered = true		
 	elseif not self:IsEnabled() and self.bEventsRegistered then
 		Apollo.RemoveEventHandler("ChangeWorld", self)	
 		Apollo.RemoveEventHandler("CombatLogMount", self)	
 		Apollo.RemoveEventHandler("PlayerPathScientistScanBotCooldown", self)			
+		self.tCooldownTimer:Stop()
 		self.bEventsRegistered = false			
 	end
 end
@@ -93,11 +92,13 @@ function Trigger:OnCombatLogMount(tEventArgs)
 	end
 end
 
-function Trigger:OnPlayerPathScientistScanBotCooldown(fTime) -- fTime is cooldown time in MS (5250)
+function Trigger:OnPlayerPathScientistScanBotCooldown(fTime) -- fTime is cooldown time in SECONDS (5.250)
 	self.log:debug("OnPlayerPathScientistScanBotCooldown(%f)", fTime)
-
+	self.tCooldownTimer:Stop()	
+	
 	fTime = math.max(1, fTime) -- TODO TEMP Lua Hack until fTime is valid
-	Apollo.CreateTimer(ksScanbotCooldownTimer, fTime, false)
+	self.tCooldownTimer:Set(fTime, false)
+	self.tCooldownTimer:Start()
 	
 	if self.bScanbotOnCooldown then
 		return

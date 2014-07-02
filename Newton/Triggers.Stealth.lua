@@ -9,7 +9,6 @@ local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Stealth", 1
 
 local kstrFieldNameEventsRegistered = "bEventsRegistered"
 local kstrFieldNameIsStealthed = "bIsStealthed"
-local kstrStealthCheckTimerName = MAJOR..":Timer"
 
 local nStealthId = 38784
 
@@ -43,13 +42,12 @@ function Trigger:__init(o)
 	
 	local result = oo.rawnew(self, o)
 	
-	Apollo.CreateTimer(kstrStealthCheckTimerName, 250, true)	
-	Apollo.RegisterTimerHandler(kstrStealthCheckTimerName, "OnStealthCheckTimer", o)	
+	o.tTimer = ApolloTimer.Create(0.25, true, "OnStealthCheckTimer", o)
 	
 	if o:IsEnabled() then
-		Apollo.StartTimer(kstrStealthCheckTimerName)
+		o.tTimer:Start()
 	else
-		Apollo.StopTimer(kstrStealthCheckTimerName)	
+		o.tTimer:Stop()
 	end		
 			
 	return result
@@ -58,9 +56,9 @@ end
 function Trigger:OnEnabledChanged()
 	self.log:debug("OnEnabledChanged")
 	if self:IsEnabled() then
-		Apollo.StartTimer(kstrStealthCheckTimerName)
+		self.tTimer:Start()
 	else
-		Apollo.StopTimer(kstrStealthCheckTimerName)	
+		self.tTimer:Stop()
 	end	
 end
 

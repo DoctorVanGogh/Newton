@@ -2,6 +2,8 @@
 -- Base class for bot summoning triggers
 -- Copyright (c) 2014 DoctorVanGogh on Wildstar forums - all rights reserved
 -----------------------------------------------------------------------------------------------
+require "PlayerPathLib"
+
 local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Base", 1
 
 -- Get a reference to the package information if any
@@ -14,6 +16,7 @@ end
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Base").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local glog
+
 
 local Trigger = APkg and APkg.tPackage
 
@@ -35,7 +38,9 @@ function Trigger:__init(o)
 	self.log:debug("Trigger:__init()")	
 	o = o or {}
 	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
-	o.enabled = true
+	if o.enabled == nil then
+		o.enabled = true
+	end
 		
 	local result = oo.rawnew(self, o)
 	
@@ -59,6 +64,7 @@ function Trigger:GetCallbacks()
 	return self.callbacks;
 end
 
+
 --- Return this trigger's decision on bot summoming.
 -- Will return one of the Trigger.SummoningChoice values or nil trigger has no choice to make
 -- @return nil or one of the Trigger.SummoningChoice fields
@@ -76,7 +82,10 @@ end
 
 function Trigger:Enable(bEnable)
 	self.log:debug("Enable(%s)", tostring(bEnable))
-	self.enabled = bEnable	
+	if bEnable == self.enabled then return end
+	
+	self.enabled = bEnable		
+	
 	if self.OnEnabledChanged ~= nil then
 		self:OnEnabledChanged()
 	end
@@ -94,7 +103,7 @@ end
 function Trigger:SetAction(eAction)
 	if self.eAction == eAction then return end
 		
-	self.eAction = eAction
+	self.eAction = eAction	
 	
 	self:OnUpdateScanbotSummonStatus()
 end

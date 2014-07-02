@@ -115,8 +115,17 @@ function ScanbotManager:RestoreSelectionToCurrentScanbot(bForceRestore)
 	RestoreScanbot(self[kstrFieldScanbotIndex], bForceRestore)
 end
 
+function ScanbotManager:ForceRestoreOnNextSummon()
+	self.bForceRestoreOnNextSummon = true
+end
+
 function ScanbotManager:SummonBot(bSummon, bForceRestore)
 	self.log:debug("SummonBot(%s, %s)", tostring(bSummon), tostring(bForceRestore))
+	if bSummon and self.bForceRestoreOnNextSummon then
+		self.bForceRestoreOnNextSummon = nil
+		bForceRestore = true
+	end
+	
 	self:RestoreSelectionToCurrentScanbot(bForceRestore)
 
 	local player = GameLib.GetPlayerUnit()
