@@ -10,6 +10,7 @@ local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Challenge", 1
 
 local kstrFieldNameEventsRegistered = "bEventsRegistered"
 local kstrFieldNameChallengeType = "eChallengeType"
+local kstrFieldActiveChallenges = "tActiveChallenges"
 
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(MAJOR)
@@ -45,6 +46,11 @@ local ktChallengeTypeToInternalEnum = {
 }
 
 
+local function IsRelevantMatchingChallenge(eMonitoredChallengesType, clgChallenge)
+	return clgChallenge:IsActivated() 
+		   and (eMonitoredChallengesType == Trigger.ChallengeTypes.Any or eMonitoredChallengesType == ktChallengeTypeToInternalEnum[clgChallenge:GetType() or -1])
+end
+
 function Trigger:__init(o) 
 	self.log:debug("Trigger:__init()")
 	
@@ -56,28 +62,34 @@ function Trigger:__init(o)
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss)
 	end
 	
+	local result = oo.rawnew(self, o)
+	
 	if o:IsEnabled() then	
-		Apollo.RegisterEventHandler("ChallengeAbandon", 			"OnChallengeUpdate", o)
-		Apollo.RegisterEventHandler("ChallengeFailTime", 			"OnChallengeUpdate", o)
-		Apollo.RegisterEventHandler("ChallengeFailArea", 			"OnChallengeUpdate", o)
-		Apollo.RegisterEventHandler("ChallengeActivate", 			"OnChallengeUpdate", o)
-		Apollo.RegisterEventHandler("ChallengeCompleted", 			"OnChallengeUpdate", o)
-		Apollo.RegisterEventHandler("ChallengeFailGeneric", 		"OnChallengeUpdate", o)	
+		o[kstrFieldActiveChallenges] = o:InitNumActivateChallenges()	
+	
+		Apollo.RegisterEventHandler("ChallengeAbandon", 			"OnChallengeEnd", o)
+		Apollo.RegisterEventHandler("ChallengeFailTime", 			"OnChallengeEnd", o)
+		Apollo.RegisterEventHandler("ChallengeFailArea", 			"OnChallengeEnd", o)
+		Apollo.RegisterEventHandler("ChallengeActivate", 			"OnChallengeStart", o)
+		Apollo.RegisterEventHandler("ChallengeCompleted", 			"OnChallengeEnd", o)
+		Apollo.RegisterEventHandler("ChallengeFailGeneric", 		"OnChallengeEnd", o)	
 				
-		o[kstrFieldNameEventsRegistered] = true		
+		o[kstrFieldNameEventsRegistered] = true				
+	else
+		o[kstrFieldActiveChallenges] = {}	
 	end		
 	
-	return oo.rawnew(self, o)
+	return result
 end
 
 function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then
-		Apollo.RegisterEventHandler("ChallengeAbandon", 			"OnChallengeUpdate", self)
-		Apollo.RegisterEventHandler("ChallengeFailTime", 			"OnChallengeUpdate", self)
-		Apollo.RegisterEventHandler("ChallengeFailArea", 			"OnChallengeUpdate", self)
-		Apollo.RegisterEventHandler("ChallengeActivate", 			"OnChallengeUpdate", self)
-		Apollo.RegisterEventHandler("ChallengeCompleted", 			"OnChallengeUpdate", self)
-		Apollo.RegisterEventHandler("ChallengeFailGeneric", 		"OnChallengeUpdate", self)	
+		Apollo.RegisterEventHandler("ChallengeAbandon", 			"OnChallengeEnd", self)
+		Apollo.RegisterEventHandler("ChallengeFailTime", 			"OnChallengeEnd", self)
+		Apollo.RegisterEventHandler("ChallengeFailArea", 			"OnChallengeEnd", self)
+		Apollo.RegisterEventHandler("ChallengeActivate", 			"OnChallengeStart", self)
+		Apollo.RegisterEventHandler("ChallengeCompleted", 			"OnChallengeEnd", self)
+		Apollo.RegisterEventHandler("ChallengeFailGeneric", 		"OnChallengeEnd", self)	
 				
 		self[kstrFieldNameEventsRegistered] = true			
 	elseif not self:IsEnabled() and self[kstrFieldNameEventsRegistered] then	
@@ -104,14 +116,10 @@ function Trigger:SetChallengeType(eChallengeType)
 end
 
 
-function Trigger:OnChallengeUpdate(...)
-	self.log:debug("OnChallengeUpdate - %s", inspect(arg))
+function Trigger:InitNumActivateChallenges()
+	self.log:debug("InitNumActivateChallenges")	
 
-	self:OnUpdateScanbotSummonStatus()
-end
-
-function Trigger:GetShouldSummonBot()
-	self.log:debug("GetShouldSummonBot")
+	local result = {}
 
 	local tChallengeData = ChallengesLib.GetActiveChallengeList()
 	if tChallengeData == nil then return end
@@ -119,12 +127,48 @@ function Trigger:GetShouldSummonBot()
 	local eChallengeType = self:GetChallengeType()
 	
 	for idx, clgCurrent in pairs(tChallengeData) do
-		if clgCurrent:IsActivated() and (eChallengeType == Trigger.ChallengeTypes.Any or eChallengeType == ktChallengeTypeToInternalEnum[clgCurrent:GetType() or -1]) then
-			return self:GetAction()
+		if IsRelevantMatchingChallenge(eChallengeType, clgCurrent) then
+			table.insert(result, clgCurrent)
 		end
 	end
+	
+	return result
+end
 
-	return nil
+
+function Trigger:OnChallengeStart(challenge)
+	self.log:debug("OnChallengeStart")
+	
+	if IsRelevantMatchingChallenge(self:GetChallengeType(), challenge) then
+		table.insert(self[kstrFieldActiveChallenges], challenge)		
+		self:OnUpdateScanbotSummonStatus()
+	end
+end
+
+function Trigger:OnChallengeEnd(ntIdChallenge)	-- Fail events pass challengge as 1st param, abandon & complete pass id 
+	self.log:debug("OnChallengeEnd")
+	
+	if type(ntIdChallenge) == "userdata" then			
+		ntIdChallenge = ntIdChallenge:GetId()
+	end
+		
+	for idx, clgCurrent in ipairs(self[kstrFieldActiveChallenges]) do
+		if clgCurrent:GetId() == ntIdChallenge then		
+			table.remove(self[kstrFieldActiveChallenges], idx)			
+			self:OnUpdateScanbotSummonStatus()			
+			return
+		end
+	end
+end
+
+function Trigger:GetShouldSummonBot()
+	self.log:debug("GetShouldSummonBot Count=%s", tostring(#self[kstrFieldActiveChallenges]))
+	
+	if #self[kstrFieldActiveChallenges] > 0 then
+		return self:GetAction()
+	else
+		return nil
+	end
 end
 
 Apollo.RegisterPackage(
