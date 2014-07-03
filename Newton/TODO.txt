@@ -1,2 +1,3 @@
 TODO:
-Update cascade change listener: remove blocked, lower triggers - we dont care about their results anyway, just let them squawk
+- improve challgne trigger - challenge is still active at completion time - update things
+- Update cascade change listener: remove blocked, lower triggers - we dont care about their results anyway, just let them squawk

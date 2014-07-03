@@ -38,6 +38,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:Locale-1.0",																
 																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
 																	"DoctorVanGogh:Newton:Triggers:Group",
+																	"DoctorVanGogh:Newton:Triggers:Challenge",
 																	"DoctorVanGogh:Newton:Triggers:Stealth",																	
 																	"DoctorVanGogh:Newton:Triggers:Instance",
 																	"DoctorVanGogh:Newton:Triggers:PvpMatch",
@@ -81,6 +82,7 @@ function Newton:OnInitialize()
 	Triggers.Group = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Group").tPackage
 	Triggers.Instance = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Instance").tPackage
 	Triggers.PvpMatch = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:PvpMatch").tPackage
+	Triggers.Challenge = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Challenge").tPackage
 	
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 	
@@ -96,13 +98,17 @@ function Newton:OnEnable()
 	
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
 		
-	self.trigger = Triggers.Cascade()
-	self.trigger:Add(Triggers.Stealth{enabled = false})
-	self.trigger:Add(Triggers.Group())	
-	self.trigger:Add(Triggers.PvpMatch())	
-	self.trigger:Add(Triggers.Instance())			
-	self.trigger:Add(Triggers.Default())	
-	self.trigger.RegisterCallback(self, Triggers.Default.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	local cascadeTrigger = Triggers.Cascade()
+		
+	cascadeTrigger:Add(Triggers.Stealth{enabled = false})
+	cascadeTrigger:Add(Triggers.Challenge())
+	cascadeTrigger:Add(Triggers.Group())	
+	cascadeTrigger:Add(Triggers.PvpMatch())	
+	cascadeTrigger:Add(Triggers.Instance())			
+	cascadeTrigger:Add(Triggers.Default())	
+	cascadeTrigger.RegisterCallback(self, Triggers.Default.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	
+	self.trigger = cascadeTrigger
 	
 	self:OnScanbotStatusUpdated(true)		
 end

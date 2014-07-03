@@ -19,6 +19,7 @@
     <Script Name="Localization/deDE.lua"/>
     <Script Name="Localization/frFR.lua"/>
     <Script Name="Triggers.Base.lua"/>	
+    <Script Name="Triggers.Challenge.lua"/>		
     <Script Name="Triggers.Group.lua"/>	
     <Script Name="Triggers.Instance.lua"/>	
     <Script Name="Triggers.PvpMatch.lua"/>	
