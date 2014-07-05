@@ -389,4 +389,3 @@ function Newton:LogLevelSelectSignal( wndHandler, wndControl, eMouseButton )
 	self.wndMain:FindChild("LogLevelButton"):SetText(text)
 end
 
-
