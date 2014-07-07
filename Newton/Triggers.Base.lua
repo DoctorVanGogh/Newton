@@ -20,6 +20,9 @@ local glog
 
 local Trigger = APkg and APkg.tPackage
 
+local tRegistry = {}
+setmetatable(tRegistry, { __mode="v"})
+
 if not Trigger then
 	local o = {	}	
 	o.enabled = true
@@ -58,6 +61,46 @@ function Trigger:OnLoad()
 	})	
 	
 	self.log = glog
+	
+	-- import GeminiLocale
+	local GeminiLocale = Apollo.GetPackage("Gemini:Locale-1.0").tPackage
+	self.localization = GeminiLocale:GetLocale("Newton:Triggers")
+end
+
+function Trigger:Register(tTrigger, strKey)
+	if tTrigger == nil then
+		error("Trigger must not be nil")
+	end
+	
+	--[[	
+	if not oo.instanceof(tTrigger, TriggerBase) then
+		error("Can only register Triggers")
+	end
+	]]
+	
+	tRegistry[strKey] = tTrigger
+end
+
+function Trigger:GetRegisteredTriggers()
+	return tRegistry
+end
+
+
+function Trigger:GetId()
+	return nil
+end
+
+function Trigger:GetName()
+	return nil
+end
+
+function Trigger:GetDescription()
+	return nil
+end
+
+
+function Trigger:GetSettings()
+	return nil
 end
 
 function Trigger:GetCallbacks()	
@@ -114,6 +157,7 @@ Apollo.RegisterPackage(
 	MAJOR, 
 	MINOR, 
 	{
+		"Gemini:Locale-1.0",
 		"Drafto:Lib:inspect-1.2",
 		"Gemini:Logging-1.2",	
 		"DoctorVanGogh:Lib:Loop:Base",

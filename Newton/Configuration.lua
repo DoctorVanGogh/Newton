@@ -49,30 +49,81 @@ function Configuration:OnDocumentReady()
 	self.ready = true
 end
 
-function Configuration:CreateDropdown(tOptions, tNames, fnGetValue, fnSetValue, nMinWidth, strHeader)
+
+-- @params tOptions
+--	tEnum 			table of avaliable values
+--  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
+--  fnValueGetter   callback function to retrieve current value
+--  fnValueSetter 	callback function to invoke on value selection
+--  nMinWidth		minimum initial width for popup texts (currently unused)
+--  strHeader		popup header
+--  strDescription  Descriptive text
+--  clrDescription  Color to use for description
+function Configuration:CreateSettingItemEnum(wndParent, tOptions)
 	if not self.ready then return end
 
-	local wndDropdown = Apollo.LoadForm(self.xmlDoc, "HoloDropdownSmall",  nil, EventsHandler)	
-	wndDropdown:SetText(tNames[fnGetValue()])
-	wndDropdown:AttachWindow(self:CreatePopup(wndDropdown, tOptions, tNames, fnSetValue, nMinWidth, strHeader))
+	tOptions = tOptions or {}	
+	local wndItem = Apollo.LoadForm(self.xmlDoc, "SettingItemEnum", wndParent, EventsHandler)
+	local wndDropdownContainer = wndItem:FindChild("DropdownContainer")
+	local wndDescription = wndItem:FindChild("Description")
+	
+	local wndDropdown = self:CreateDropdown(wndDropdownContainer, tOptions)
+	wndDescription:SetText(tOptions.strDescription)
+	if tOptions.clrDescription then
+		wndDescription:SetTextColor(tOptions.clrDescription)
+	end
+	
+	return wndDescription
+end
+
+
+-- @params tOptions
+--	tEnum 			table of avaliable values
+--  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
+--  fnValueGetter   callback function to retrieve current value
+--  fnValueSetter 	callback function to invoke on value selection
+--  nMinWidth		minimum initial width for popup texts (currently unused)
+--  strHeader		popup header
+function Configuration:CreateDropdown(wndParent, tOptions)
+	if not self.ready then return end
+
+	tOptions = tOptions or {}	
+	local tEnumNames = tOptions.tEnumNames or {}
+	local fnValueGetter = tOptions.fnValueGetter or Apollo.NoOp
+	
+	local wndDropdown = Apollo.LoadForm(self.xmlDoc, "HoloDropdownSmall",  wndParent, EventsHandler)	
+	local value = fnValueGetter()
+	wndDropdown:SetText(tEnumNames[value] or tostring(value))
+	wndDropdown:AttachWindow(self:CreatePopup(wndParent, tOptions))
 	
 	return wndDropdown
 end
 
 
-function Configuration:CreatePopup(wndParent, tOptions, tNames, fnSetValue, nMinWidth, strHeader)
+-- @params tOptions
+--	tEnum 			table of avaliable values
+--  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
+--  fnValueSetter 	callback function to invoke on value selection
+--  nMinWidth		minimum initial width for popup texts (currently unused)
+--  strHeader		popup header
+function Configuration:CreatePopup(wndParent, tOptions)
 	if not self.ready then return end
+		
+	tOptions = tOptions or {}
+	local tEnum = tOptions.tEnum or {}
+	local tEnumNames = tOptions.tEnumNames or {}
+	local fnValueSetter = tOptions.fnValueSetter or Apollo.NoOp
+	local strHeader = tOptions.strHeader
+	local nMinWidth = math.max(tOptions.nMinWidth or 0, 200)
 	
 	local wndPopup = Apollo.LoadForm(self.xmlDoc, "HoloEnumPopup",  wndParent, EventsHandler)
 	local wndContainer = wndPopup:FindChild("ElementList")
-	local nMinWidth = nMinWidth or 0
-	nMinWidth = math.max(nMinWidth, 200)
 	
 	if strHeader then
 		wndPopup:FindChild("Header"):SetText(strHeader)
 	end
 	
-	for idx, tElement in ipairs(tOptions) do
+	for idx, oElement in ipairs(tEnum) do
 		local strFormName
 		if #tOptions == 1 then
 			strFormName = "HoloEnumPopupElementSingle"
@@ -87,26 +138,13 @@ function Configuration:CreatePopup(wndParent, tOptions, tNames, fnSetValue, nMin
 		end
 		
 		local wndElement = Apollo.LoadForm(self.xmlDoc, strFormName, wndContainer, EventsHandler)
-		wndElement:SetText(tNames[tElement])
-		wndElement:SetData({tElement, fnSetValue})
+		local strName = tEnumNames[oElement] or tostring(oElement)
+		wndElement:SetText(strName)
+		wndElement:SetData({oElement, fnValueSetter})
 		
-		local nTextWidth = Apollo.GetTextWidth("CRB_Button",tNames[tElement])		
+		local nTextWidth = Apollo.GetTextWidth("CRB_Button", strName)		
 		nMinWidth = math.max(nMinWidth, nTextWidth)		
-	end
-	--[[
-	local nLeft, nTop, nRight, nBottom = wndPopup:GetAnchorOffsets()
-	local nParentTop = nTop	
-	nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
-	local nHeightTotal = wndContainer:ArrangeChildrenVert(0)
-	
-	wndPopup:SetAnchorOffsets(
-		0, 
-		nParentTop, 
-		nMinWidth + math.abs(nLeft) + math.abs(nRight), 
-		nParentTop + nHeightTotal + math.abs(nTop) + math.abs(nBottom)
-	)
-	]]
-	
+	end	
 	return wndPopup
 end
 

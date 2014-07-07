@@ -35,6 +35,7 @@ Trigger.ChallengeTypes = {
 	Combat = 2,
 	General = 3,	
 	Item = 4,
+	Activate = 5,
 	Any = 999
 }
 
@@ -43,6 +44,7 @@ local ktChallengeTypeToInternalEnum = {
 	[ChallengesLib.ChallengeType_General] = Trigger.ChallengeTypes.General,
 	[ChallengesLib.ChallengeType_Item] = Trigger.ChallengeTypes.Item,
 	[ChallengesLib.ChallengeType_Ability] = Trigger.ChallengeTypes.Ability,
+	[ChallengesLib.ChallengeType_ChecklistActivate] = Trigger.ChallengeTypes.Activate
 }
 
 
@@ -81,6 +83,38 @@ function Trigger:__init(o)
 	
 	return result
 end
+
+function Trigger:GetId()
+	return MAJOR
+end
+
+function Trigger:GetName()
+	return self.localization["Challenge:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Challenge:Description"]
+end
+
+function Trigger:GetSettings()
+	return {
+		{
+			strDesciption = self.localization["Challenge:ChallengeType"],
+			tValues = Trigger.ChallengeTypes,
+			tValueNames = {
+				[Trigger.ChallengeTypes.Ability] = Apollo.GetString("Challenges_AbilityChallenge"),
+				[Trigger.ChallengeTypes.Combat] = Apollo.GetString("Challenges_CombatChallenge"),
+				[Trigger.ChallengeTypes.General] = Apollo.GetString("Challenges_GeneralChallenge"),
+				[Trigger.ChallengeTypes.Item] = Apollo.GetString("Challenges_ItemChallenge"),
+				[Trigger.ChallengeTypes.Activate] = Apollo.GetString("Challenges_ActivateChallenge"),
+				[Trigger.ChallengeTypes.Any] = self.localization["Trigger:Settings:Any"]
+			},
+			strFnGetter = "GetChallengeType",
+			strFnSetter = "SetChallengeType"
+		}
+	}
+end
+
 
 function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then
@@ -182,7 +216,7 @@ Apollo.RegisterPackage(
 	}
 )
 	
-	
+TriggerBase:Register(Trigger, MAJOR)
 	
 	
 

@@ -44,6 +44,14 @@ function Trigger:__init(o)
 	return oo.rawnew(self, o)
 end
 
+function Trigger:GetName()
+	return self.localization["Instance:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Instance:Description"]
+end
+
 function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then
 		Apollo.RegisterEventHandler("ChangeWorld", "OnChangeWorld", o)				
@@ -79,3 +87,5 @@ Apollo.RegisterPackage(
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )
+
+TriggerBase:Register(Trigger, MAJOR)

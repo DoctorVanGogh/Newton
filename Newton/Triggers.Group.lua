@@ -54,6 +54,30 @@ function Trigger:__init(o)
 	return oo.rawnew(self, o)
 end
 
+function Trigger:GetName()
+	return self.localization["Group:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Group:Description"]
+end
+
+function Trigger:GetSettings()
+	return {
+		{
+			strDesciption = self.localization["Group:GroupType"],
+			tValues = Trigger.GroupTypes,
+			tValueNames = {
+				[Trigger.GroupTypes.Regular] = Apollo.GetString("Group_PartyName"),
+				[Trigger.GroupTypes.Raid] = Apollo.GetString("Group_RaidName"),
+				[Trigger.GroupTypes.Any] = self.localization["Trigger:Settings:Any"]			
+			},
+			strFnGetter = "GetGroupType",
+			strFnSetter = "SetGroupType"
+		}
+	}
+end
+
 function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then
 		Apollo.RegisterEventHandler("Group_Updated", "OnGroupChanged", self)	
@@ -112,3 +136,5 @@ Apollo.RegisterPackage(
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )
+
+TriggerBase:Register(Trigger, MAJOR)

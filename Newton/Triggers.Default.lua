@@ -51,6 +51,13 @@ function Trigger:__init(o)
 	return oo.rawnew(self, o)
 end
 
+function Trigger:GetName()
+	return self.localization["Default:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Default:Description"]
+end
 
 function Trigger:GetShouldSummonBot()
 	self.log:debug("GetShouldSummonBot()")
@@ -126,3 +133,5 @@ Apollo.RegisterPackage(
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )
+
+TriggerBase:Register(Trigger, MAJOR)

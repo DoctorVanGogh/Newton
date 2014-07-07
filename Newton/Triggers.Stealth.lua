@@ -53,6 +53,14 @@ function Trigger:__init(o)
 	return result
 end
 
+function Trigger:GetName()
+	return self.localization["Stealth:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Stealth:Description"]
+end
+
 function Trigger:OnEnabledChanged()
 	self.log:debug("OnEnabledChanged")
 	if self:IsEnabled() then
@@ -110,3 +118,5 @@ Apollo.RegisterPackage(
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )
+
+TriggerBase:Register(Trigger, MAJOR)
