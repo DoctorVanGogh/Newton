@@ -29,6 +29,6 @@
     <Script Name="ScanbotManager.lua"/>
     <Script Name="Newton.lua"/>
     <Form Name="NewtonForm.xml"/>
-    <Script Name="Configuration.lua"/>	
+    <Script Name="Configuration.lua"/>
     <Form Name="Configuration.xml"/>
 </Addon>

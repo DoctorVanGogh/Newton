@@ -51,14 +51,15 @@ end
 
 
 -- @params tOptions
---	tEnum 			table of avaliable values
---  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
---  fnValueGetter   callback function to retrieve current value
---  fnValueSetter 	callback function to invoke on value selection
---  nMinWidth		minimum initial width for popup texts (currently unused)
---  strHeader		popup header
---  strDescription  Descriptive text
---  clrDescription  Color to use for description
+--	tEnum 				table of avaliable values
+--  tEnumNames 	 		table of value names (tEnumNames[*Somevalue*] = "SomeValueName")
+--  tEnumDescriptions	table of value descriptions (used as tooltip) (tEnumDescriptions[*SomeValue*] = "SomeTooltip")
+--  fnValueSetter 		callback function to invoke on value selection
+--  fnValueGetter   	callback function to retrieve current value
+--  nMinWidth			minimum initial width for popup texts (currently unused)
+--  strHeader			popup header
+--  strDescription  	Descriptive text
+--  clrDescription  	Color to use for description
 function Configuration:CreateSettingItemEnum(wndParent, tOptions)
 	if not self.ready then return end
 
@@ -78,12 +79,13 @@ end
 
 
 -- @params tOptions
---	tEnum 			table of avaliable values
---  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
---  fnValueGetter   callback function to retrieve current value
---  fnValueSetter 	callback function to invoke on value selection
---  nMinWidth		minimum initial width for popup texts (currently unused)
---  strHeader		popup header
+--	tEnum 				table of avaliable values
+--  tEnumNames 	 		table of value names (tEnumNames[*Somevalue*] = "SomeValueName")
+--  tEnumDescriptions	table of value descriptions (used as tooltip) (tEnumDescriptions[*SomeValue*] = "SomeTooltip")
+--  fnValueSetter 		callback function to invoke on value selection
+--  fnValueGetter   	callback function to retrieve current value
+--  nMinWidth			minimum initial width for popup texts (currently unused)
+--  strHeader			popup header
 function Configuration:CreateDropdown(wndParent, tOptions)
 	if not self.ready then return end
 
@@ -101,20 +103,22 @@ end
 
 
 -- @params tOptions
---	tEnum 			table of avaliable values
---  tEnumNames 	 	table of value names (tEnumNames[*Somevalue*] = "SomeValueDescription")
---  fnValueSetter 	callback function to invoke on value selection
---  nMinWidth		minimum initial width for popup texts (currently unused)
---  strHeader		popup header
+--	tEnum 				table of avaliable values
+--  tEnumNames 	 		table of value names (tEnumNames[*Somevalue*] = "SomeValueName")
+--  tEnumDescriptions	table of value descriptions (used as tooltip) (tEnumDescriptions[*SomeValue*] = "SomeTooltip")
+--  fnValueSetter 		callback function to invoke on value selection
+--  nMinWidth			minimum initial width for popup texts (currently unused)
+--  strHeader			popup header
 function Configuration:CreatePopup(wndParent, tOptions)
 	if not self.ready then return end
 		
 	tOptions = tOptions or {}
 	local tEnum = tOptions.tEnum or {}
 	local tEnumNames = tOptions.tEnumNames or {}
+	local tEnumDescriptions = tOptions.tEnumDescriptions or {}
 	local fnValueSetter = tOptions.fnValueSetter or Apollo.NoOp
 	local strHeader = tOptions.strHeader
-	local nMinWidth = math.max(tOptions.nMinWidth or 0, 200)
+	local nMinWidth = math.max(tOptions.nMinWidth or 0, 0)
 	
 	local wndPopup = Apollo.LoadForm(self.xmlDoc, "HoloEnumPopup",  wndParent, EventsHandler)
 	local wndContainer = wndPopup:FindChild("ElementList")
@@ -130,7 +134,7 @@ function Configuration:CreatePopup(wndParent, tOptions)
 		else
 			if idx == 1 then
 				strFormName = "HoloEnumPopupElementTop"
-			elseif idx == #tOptions then
+			elseif idx == #tEnum then
 				strFormName = "HoloEnumPopupElementBottom"
 			else
 				strFormName = "HoloEnumPopupElementMiddle"		
@@ -141,10 +145,23 @@ function Configuration:CreatePopup(wndParent, tOptions)
 		local strName = tEnumNames[oElement] or tostring(oElement)
 		wndElement:SetText(strName)
 		wndElement:SetData({oElement, fnValueSetter})
+		local strDescription = tEnumDescriptions[oElement]
+		if strDescription then
+			wndElement:SetTooltip(tostring(strDescription))
+		end
 		
 		local nTextWidth = Apollo.GetTextWidth("CRB_Button", strName)		
 		nMinWidth = math.max(nMinWidth, nTextWidth)		
 	end	
+	local nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
+	local nHeightTotal = wndContainer:ArrangeChildrenVert(0)
+	
+	wndPopup:SetAnchorOffsets(
+		0, 
+		0, 
+		nMinWidth + math.abs(nLeft) + math.abs(nRight), 
+		nHeightTotal + math.abs(nTop) + math.abs(nBottom)
+	)
 	return wndPopup
 end
 

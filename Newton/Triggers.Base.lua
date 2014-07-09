@@ -94,7 +94,7 @@ function Trigger:GetName()
 	return nil
 end
 
-function Trigger:GetDescription()
+function Trigger:tEnumDesciptions()
 	return nil
 end
 

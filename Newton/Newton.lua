@@ -26,6 +26,7 @@ local inspect
 local Triggers = {}
 local SummoningChoice
 local ScanbotManager
+local Configuration
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -35,7 +36,9 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																true, 
 																{ 
 																	"Gemini:Logging-1.2",
-																	"Gemini:Locale-1.0",																
+																	"Gemini:Locale-1.0",	
+																	"DoctorVanGogh:Lib:Configuration",
+																	"DoctorVanGogh:Newton:Triggers:Base",	
 																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
 																	"DoctorVanGogh:Newton:Triggers:Group",
 																	"DoctorVanGogh:Newton:Triggers:Challenge",
@@ -76,6 +79,7 @@ function Newton:OnInitialize()
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
+	Triggers.Base = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage	
 	Triggers.Default = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
 	Triggers.Stealth = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Stealth").tPackage
 	Triggers.Cascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
@@ -87,6 +91,8 @@ function Newton:OnInitialize()
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 	
 	SummoningChoice = Triggers.Default.SummoningChoice
+	
+	Configuration = Apollo.GetPackage("DoctorVanGogh:Lib:Configuration").tPackage
 end
 
 
@@ -157,6 +163,29 @@ function Newton:OnDocumentReady()
 	end
 	
 	self:InitializeForm()
+	local wndAddBtn = self.wndMain:FindChild("AddTriggerBtn")
+	
+--	tEnum 				table of avaliable values
+--  tEnumNames 	 		table of value names (tEnumNames[*Somevalue*] = "SomeValueName")
+--  tEnumDesciptions	table of value descriptions (used as tooltip) (tEnumDesciptions[*SomeValue*] = "SomeTooltip")
+--  fnValueSetter 		callback function to invoke on value selection
+--  nMinWidth			minimum initial width for popup texts (currently unused)
+--  strHeader			popup header	
+	
+	local tOptions = {
+		tEnum = {},
+		tEnumNames = {},
+		tEnumDescriptions = {},
+		strHeader = "Lorem Ipsum"
+	}
+	for key, trigger in pairs(Triggers.Base:GetRegisteredTriggers()) do
+		table.insert(tOptions.tEnum, trigger)
+		tOptions.tEnumNames[trigger] = trigger:GetName()
+		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()		
+	end
+	
+	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
+	wndAddBtn:AttachWindow(popup)		
 	
 	self.wndMain:Show(false);
 	
