@@ -40,15 +40,119 @@ function EventsHandler:OnClosePopup(wndHandler, wndControl, eMouseButton )
 	wndHandler:GetParent():Close()
 end
 
+function EventsHandler:SettingCheckChanged( wndHandler, wndControl, eMouseButton )
+	if wndHandler ~= wndControl then
+		return
+	end
+	
+	local fnSetter = wndHandler:GetData()
+	fnSetter(wndHandler:IsChecked())			
+end
+
+function EventsHandler:SectionItemCheckChange( wndHandler, wndControl, eMouseButton )
+	
+	if wndHandler ~= wndControl then
+		return
+	end
+	local wndItem = wndHandler:GetParent():GetParent()
+	local wndElements = wndItem:FindChild("ElementsContainer")
+	
+	local bChecked = wndHandler:IsChecked()
+	local bCurrenlyChecked = wndElements:IsVisible()
+	
+
+	if bChecked ~= bCurrenlyChecked then
+		local nLeft, nTop, nRight, nBottom = wndElements:GetAnchorOffsets()
+		
+		local nHeight = math.abs(nBottom - nTop)
+		Print(tostring(nHeight).. " ".. tostring(bChecked))
+		nLeft, nTop, nRight, nBottom = wndItem:GetAnchorOffsets()		
+		if bChecked then
+			wndItem:SetAnchorOffsets(nLeft, nTop, nRight, nBottom + nHeight)
+			wndElements:Show(true)			
+		else
+			wndItem:SetAnchorOffsets(nLeft, nTop, nRight, nBottom - nHeight)
+			wndElements:Show(false)		
+		end
+	end
+end
+
 function Configuration:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("Configuration.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)		
 end
 
+
+
+
+
 function Configuration:OnDocumentReady()
 	self.ready = true
 end
 
+-- @params tOptions
+--  strDescription  	Descriptive text
+--  clrDescription  	Color to use for description
+function Configuration:CreateSection(wndParent, tOptions)
+	if not self.ready then return end
+
+	tOptions = tOptions or {}	
+	
+	local wndItem = Apollo.LoadForm(self.xmlDoc, "SectionItem", wndParent, nil)	
+
+	local wndDescription = wndItem:FindChild("Title")
+	wndDescription:SetText(tOptions.strDescription)
+	if tOptions.clrDescription then
+		wndDescription:SetTextColor(tOptions.clrDescription)
+	end	
+
+	return wndItem
+end
+
+-- @params tOptions
+--  strDescription  	Descriptive text
+--  clrDescription  	Color to use for description
+function Configuration:CreateSectionCollapsible(wndParent, tOptions)
+	if not self.ready then return end
+
+	tOptions = tOptions or {}	
+	
+	local wndItem = Apollo.LoadForm(self.xmlDoc, "SectionItemCollapsible", wndParent, EventsHandler)	
+
+	local wndDescription = wndItem:FindChild("EnableBtn")
+	wndDescription:SetText(tOptions.strDescription)
+	if tOptions.clrDescription then
+		wndDescription:SetTextColor(tOptions.clrDescription)
+	end	
+
+	return wndItem
+end
+
+
+-- @params tOptions
+--  fnValueSetter 		callback function to invoke on value selection
+--  fnValueGetter   	callback function to retrieve current value
+--  strDescription  	Descriptive text
+--  clrDescription  	Color to use for description
+function Configuration:CreateSettingItemBoolean(wndParent, tOptions)
+	if not self.ready then return end
+
+	tOptions = tOptions or {}			
+	local fnValueGetter = tOptions.fnValueGetter or Apollo.NoOp
+	local fnValueSetter = tOptions.fnValueSetter or Apollo.NoOp	
+	local wndItem = Apollo.LoadForm(self.xmlDoc, "SettingItemBoolean", wndParent, EventsHandler)	
+
+	local wndDescription = wndItem:FindChild("Description")
+	wndDescription:SetText(tOptions.strDescription)
+	if tOptions.clrDescription then
+		wndDescription:SetTextColor(tOptions.clrDescription)
+	end
+	
+	local wndCheck = wndItem:FindChild("Check")
+	wndCheck:SetCheck(fnValueGetter())
+
+	return wndItem
+end
 
 -- @params tOptions
 --	tEnum 				table of avaliable values
@@ -74,7 +178,7 @@ function Configuration:CreateSettingItemEnum(wndParent, tOptions)
 		wndDescription:SetTextColor(tOptions.clrDescription)
 	end
 	
-	return wndDescription
+	return wndItem
 end
 
 

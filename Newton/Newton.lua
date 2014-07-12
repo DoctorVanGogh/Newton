@@ -147,22 +147,89 @@ function Newton:OnDocumentReady()
 		return
 	end
 	
-	self.wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)	
-	self.wndMain:FindChild("HeaderLabel"):SetText(MAJOR)	
+	self:InitializeForm()		
+
+	Apollo.RegisterEventHandler("WindowManagementReady", "OnWindowManagementReady", self)
 	
+end
+
+function Newton:InitializeForm()
+	local wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)	
+
+	self.wndMain = wndMain
+	wndMain:FindChild("HeaderLabel"):SetText(MAJOR)	
+	
+	-- build configuration ui
+	local wndContent = wndMain:FindChild("Content")
+	
+	-- Sections
+	local wndGeneral = Configuration:CreateSection(wndContent, { strDescription = self.localization["Section:General"] })
+	local wndTriggers = Configuration:CreateSection(wndContent, { strDescription = self.localization["Section:Triggers"] })
+	local wndAdvanced = Configuration:CreateSectionCollapsible(wndContent, { strDescription = self.localization["Section:Advanced"] })
+	
+	-- Section: 'General'
+	local wndElementsContainer = wndGeneral:FindChild("ElementsContainer")
+	Configuration:CreateSettingItemBoolean(
+		wndElementsContainer, 
+		{
+			strDescription = self.localization["Option:Persist"],
+			fnValueGetter = function() 
+				return self:GetPersistScanbot() 
+			end,
+			fnValueSetter = function(value) 
+				self:SetPersistScanbot(value) 
+			end			
+		}
+	)
+	local nHeight = wndElementsContainer:ArrangeChildrenVert(0)
+	local nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
+	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
+	nLeft, nTop, nRight, nBottom = wndGeneral:GetAnchorOffsets()
+	wndGeneral:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+
+	-- Section: 'Triggers'
+	-- TODO
+	
+	
+	-- Section: 'Advanced'
+	wndElementsContainer = wndAdvanced:FindChild("ElementsContainer")
+	Configuration:CreateSettingItemEnum(
+		wndElementsContainer, 
+		{
+			tEnum = {
+				"DEBUG", "INFO", "WARN", "FATAL", "ERROR"
+			},
+			strHeader = self.localization["Option:LogLevel:PopupHeader"],
+			strDescription = self.localization["Option:LogLevel"],
+			fnValueGetter = function() 
+				return self.strLogLevel
+			end,
+			fnValueSetter = function(value) 
+				self.strLogLevel = value
+				self.log:SetLevel(value)
+			end			
+		}
+	)
+	nHeight = wndElementsContainer:ArrangeChildrenVert(0)
+	nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
+	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
+	nLeft, nTop, nRight, nBottom = wndAdvanced:GetAnchorOffsets()
+	wndAdvanced:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+		
+	wndContent:ArrangeChildrenVert()
+		
 	GeminiLocale:TranslateWindow(self.localization, self.wndMain)				
 	
-	self.wndLogLevelsPopup = self.wndMain:FindChild("LogLevelChoices")
-	self.wndLogLevelsPopup:Show(false)
+	wndMain:Show(false, true);
+	
 		
-	self.wndMain:FindChild("LogLevelButton"):AttachWindow(self.wndLogLevelsPopup)
 	self.xmlDoc = nil	
 	
 	if knEnforceSummoningActionInverval > 0 then
 		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
 	end
 	
-	self:InitializeForm()
+	
 	local wndAddBtn = self.wndMain:FindChild("AddTriggerBtn")
 	
 --	tEnum 				table of avaliable values
@@ -187,20 +254,11 @@ function Newton:OnDocumentReady()
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
 	wndAddBtn:AttachWindow(popup)		
 	
-	self.wndMain:Show(false);
 	
-	Apollo.RegisterEventHandler("WindowManagementReady", "OnWindowManagementReady", self)
 	
-end
-
-function Newton:InitializeForm()
-	if not self.wndMain then
-		return
-	end
-	
-	self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
-	self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())	
-	self.wndMain:FindChild("LogLevelButton"):SetText(self.strLogLevel)	
+	--self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
+	--self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())	
+	--self.wndMain:FindChild("LogLevelButton"):SetText(self.strLogLevel)	
 end
 
 function Newton:OnWindowManagementReady()
@@ -364,8 +422,6 @@ function Newton:ToggleWindow()
 	if self.wndMain:IsVisible() then
 		self.wndMain:Close()
 	else
-		self:InitializeForm()
-	
 		self.wndMain:Show(true)
 		self.wndMain:ToFront()
 	end
@@ -417,4 +473,8 @@ function Newton:LogLevelSelectSignal( wndHandler, wndControl, eMouseButton )
 	self.log:SetLevel(text)	
 	self.wndMain:FindChild("LogLevelButton"):SetText(text)
 end
+
+
+
+
 

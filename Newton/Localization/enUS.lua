@@ -4,11 +4,13 @@
 -----------------------------------------------------------------------------------------------
 
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:NewLocale("Newton", "enUS", true)
-L["Auto-summon Scanbot"] = true
-L["Remember Scanbot"] = true
-L["Advanced"] = true
-L["Log Level"] = true
-L["Levels:"] = true
+L["Section:General"] = "General"
+L["Section:Triggers"] = "Triggers"
+L["Section:Advanced"] = "Advanced"
+L["Option:Persist"] = "Remember Scanbot"
+L["Option:LogLevel"] = "Log Level"
+L["Option:LogLevel:PopupHeader"] = "Levels"
+
 L["Player not a scientist - consider disabling Addon %s for this character!"] = true
 L["Not a scientist - configuration disabled!"] = true
 
@@ -24,21 +26,21 @@ M["Actions:NoAction"] = "(Manual only)"
 
 -- trigger specific values
 M["Challenge:Name"] = "Challenge"
-M["Challenge:Description"] = "When on a challenge of a certain type, perform the following action for the scanbot"
+M["Challenge:Description"] = "When on a challenge of a certain type, perform an action for the scanbot"
 M["Challenge:ChallengeType"] = "Challenge type"
 
 M["Default:Name"] = "Default"
-M["Default:Description"] = "By default, perform the following action for the scanbot"
+M["Default:Description"] = "By default, perform an action for the scanbot"
 
 M["Group:Name"] = "Group"
-M["Group:Description"] = "When in a group of a certain type, perform the following action for the scanbot"
+M["Group:Description"] = "When in a group of a certain type, perform an action for the scanbot"
 M["Group:GroupType"] = "Group type"
 
 M["Instance:Name"] = "Instance"
-M["Instance:Description"] = "When in an instance, perform the following action for the scanbot"
+M["Instance:Description"] = "When in an instance, perform an action for the scanbot"
 
 M["PvpMatch:Name"] = "PVP Match"
-M["PvpMatch:Description"] = "When in a PVP Match, perform the following action for the scanbot"
+M["PvpMatch:Description"] = "When in a PVP Match, perform an action for the scanbot"
 
 M["Stealth:Name"] = "Stealth"
-M["Stealth:Description"] = "When stealthed, perform the following action for the scanbot"
+M["Stealth:Description"] = "When stealthed, perform an action for the scanbot"
