@@ -10,6 +10,12 @@ L["Section:Advanced"] = "Advanced"
 L["Option:Persist"] = "Remember Scanbot"
 L["Option:LogLevel"] = "Log Level"
 L["Option:LogLevel:PopupHeader"] = "Levels"
+L["Option:Profile"] = "Current Profile"
+L["Option:Profile:PopupHeader"] = "Profiles"
+L["Option:Profile:New"] = "New Profile"
+L["Option:Profile:Delete"] = "Delete current profile"
+L["Option:Profile:Triggers"] = "Triggers"
+L["Option:Profile:Triggers:Explanation"] = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 
 L["Player not a scientist - consider disabling Addon %s for this character!"] = true
 L["Not a scientist - configuration disabled!"] = true

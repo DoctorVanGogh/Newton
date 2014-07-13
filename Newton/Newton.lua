@@ -49,7 +49,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"DoctorVanGogh:Newton:ScanbotManager"
 																}
 															)
-
+															
 function Newton:OnInitialize()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
@@ -174,21 +174,40 @@ function Newton:InitializeForm()
 		{
 			strDescription = self.localization["Option:Persist"],
 			fnValueGetter = function() 
-				return self:GetPersistScanbot() 
-			end,
-			fnValueSetter = function(value) 
-				self:SetPersistScanbot(value) 
-			end			
+								return self:GetPersistScanbot() 
+							end,
+			fnValueSetter = function(v) 
+								self:SetPersistScanbot(v)
+							end
 		}
 	)
-	local nHeight = wndElementsContainer:ArrangeChildrenVert(0)
-	local nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
-	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
-	nLeft, nTop, nRight, nBottom = wndGeneral:GetAnchorOffsets()
-	wndGeneral:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+	Configuration:SizeSectionToContent(wndGeneral)
 
 	-- Section: 'Triggers'
-	-- TODO
+	wndElementsContainer = wndTriggers:FindChild("ElementsContainer")
+	local _, wndDropdown = Configuration:CreateSettingItemEnum(
+		wndElementsContainer,
+		{
+			tEnum = { 
+				"(NYI)"
+			},
+			strHeader = self.localization["Option:Profile:PopupHeader"],
+			strDescription = self.localization["Option:Profile"],
+			--fnValueGetter = ...
+			--fnValueSetter = ...
+		}
+	)
+	-- add/remove button to dropdown
+	local nLeft, nTop, nRight, nBottom = wndDropdown:GetAnchorOffsets()
+	local wndAddElement = Apollo.LoadForm(self.xmlDoc, "AddElementButton", wndDropdown:GetParent(), self)
+	local wndRemoveElement = Apollo.LoadForm(self.xmlDoc, "RemoveElementButton", wndDropdown:GetParent(), self)
+	wndDropdown:SetAnchorOffsets(nLeft + wndAddElement:GetWidth(), nTop, nRight - wndRemoveElement:GetWidth(), nBottom)
+	
+	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
+	
+	wndTriggersBlock:ArrangeChildrenVert()
+	Configuration:SizeSectionToContent(wndTriggers)
+
 	
 	
 	-- Section: 'Advanced'
@@ -210,21 +229,16 @@ function Newton:InitializeForm()
 			end			
 		}
 	)
-	nHeight = wndElementsContainer:ArrangeChildrenVert(0)
-	nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
-	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
-	nLeft, nTop, nRight, nBottom = wndAdvanced:GetAnchorOffsets()
-	wndAdvanced:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+	Configuration:SizeSectionToContent(wndAdvanced)
+	Configuration:UpdateCollapsibleSectionHeight(wndAdvanced)
+	Configuration:ExpandSection(wndAdvanced, false)
 		
 	wndContent:ArrangeChildrenVert()
 		
 	GeminiLocale:TranslateWindow(self.localization, self.wndMain)				
 	
 	wndMain:Show(false, true);
-	
-		
-	self.xmlDoc = nil	
-	
+			
 	if knEnforceSummoningActionInverval > 0 then
 		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
 	end
@@ -427,54 +441,13 @@ function Newton:ToggleWindow()
 	end
 end
 
-function Newton:OnAutoSummonCheck( wndHandler, wndControl, eMouseButton )
-	self:SetAutoSummonScanbot(wndControl:IsChecked())
+
+
+
+function Newton:AddElementSignal( wndHandler, wndControl, eMouseButton )
 end
 
-function Newton:OnPersistScanbotCheck( wndHandler, wndControl, eMouseButton )
-	self:SetPersistScanbot(wndControl:IsChecked())
+function Newton:RemoveElementSignal( wndHandler, wndControl, eMouseButton )
 end
-
-
-function Newton:AdvancedCheckToggle( wndHandler, wndControl, eMouseButton )
-	if wndHandler ~= wndControl then
-		return
-	end	
-	
-	local wndAdvanced = self.wndMain:FindChild("AdvancedContainer")
-	local wndContent = self.wndMain:FindChild("Content")
-		
-	if wndHandler:IsChecked() then
-		wndAdvanced:Show(true)	
-	else
-		wndAdvanced:Show(false)	
-		wndContent:SetVScrollPos(0)
-	end	
-
-	wndContent:ArrangeChildrenVert()
-end
-
-
-function Newton:OnSelectLogLevelFormClose( wndHandler, wndControl, eMouseButton )
-	local wndForm = wndControl:GetParent() 
-	wndForm:Close()
-end
-
-
-function Newton:LogLevelSelectSignal( wndHandler, wndControl, eMouseButton )
-	if wndHandler ~= wndControl then
-		return
-	end
-
-	wndControl:GetParent():Close()	
-		
-	local text = wndControl:GetText()
-	self.strLogLevel = text
-	self.log:SetLevel(text)	
-	self.wndMain:FindChild("LogLevelButton"):SetText(text)
-end
-
-
-
 
 

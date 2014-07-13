@@ -16,6 +16,9 @@ end
 
 local Configuration = APkg and APkg.tPackage or {}
 
+local GeminiLogging
+local glog
+
 local EventsHandler = {}
 
 function EventsHandler:OnSignalEnumCoice(wndHandler, wndControl, eMouseButton )
@@ -30,6 +33,7 @@ function EventsHandler:OnSignalEnumCoice(wndHandler, wndControl, eMouseButton )
 	fnSetter(value)	
 	
 	wndHandler:GetParent():GetParent():Close()
+	--wndHandler:GetParent():GetParent()
 end
 
 function EventsHandler:OnClosePopup(wndHandler, wndControl, eMouseButton )
@@ -45,8 +49,13 @@ function EventsHandler:SettingCheckChanged( wndHandler, wndControl, eMouseButton
 		return
 	end
 	
+	local bChecked = wndHandler:IsChecked()
 	local fnSetter = wndHandler:GetData()
-	fnSetter(wndHandler:IsChecked())			
+	
+	if fnSetter and (type(fnSetter) == "function" or (type(fnSetter) == "table" and fnSetter.__call)) then
+		fnSetter(bChecked)	
+	end
+	
 end
 
 function EventsHandler:SectionItemCheckChange( wndHandler, wndControl, eMouseButton )
@@ -58,26 +67,21 @@ function EventsHandler:SectionItemCheckChange( wndHandler, wndControl, eMouseBut
 	local wndElements = wndItem:FindChild("ElementsContainer")
 	
 	local bChecked = wndHandler:IsChecked()
-	local bCurrenlyChecked = wndElements:IsVisible()
+	local bCurrentlyChecked = wndElements:IsVisible()
 	
-
-	if bChecked ~= bCurrenlyChecked then
-		local nLeft, nTop, nRight, nBottom = wndElements:GetAnchorOffsets()
-		
-		local nHeight = math.abs(nBottom - nTop)
-		Print(tostring(nHeight).. " ".. tostring(bChecked))
-		nLeft, nTop, nRight, nBottom = wndItem:GetAnchorOffsets()		
-		if bChecked then
-			wndItem:SetAnchorOffsets(nLeft, nTop, nRight, nBottom + nHeight)
-			wndElements:Show(true)			
-		else
-			wndItem:SetAnchorOffsets(nLeft, nTop, nRight, nBottom - nHeight)
-			wndElements:Show(false)		
-		end
+	if bChecked ~= bCurrentlyChecked then	
+		Configuration:ExpandSection(wndItem, bChecked)
 	end
 end
 
 function Configuration:OnLoad()
+	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
+	glog = GeminiLogging:GetLogger({
+		level = GeminiLogging.DEBUG,
+		pattern = "%d [%c:%n] %l - %m",
+		appender = "GeminiConsole"
+	})	
+
 	self.xmlDoc = XmlDoc.CreateFromFile("Configuration.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)		
 end
@@ -125,7 +129,41 @@ function Configuration:CreateSectionCollapsible(wndParent, tOptions)
 		wndDescription:SetTextColor(tOptions.clrDescription)
 	end	
 
+	Configuration:SizeSectionToContent(wndItem)
+	Configuration:UpdateCollapsibleSectionHeight(wndItem)	
+	
 	return wndItem
+end
+
+function Configuration:ExpandSection(wndSection, bExpanded)
+	local wndElements = wndSection:FindChild("ElementsContainer")
+	local nLeft, nTop, nRight, nBottom = wndSection:GetAnchorOffsets()
+	local nElementsLeft, nElementsTop, nElementsRight, nElementsBottom = wndElements:GetAnchorOffsets()
+
+	if bExpanded then
+		local nHeight = wndElements:GetData()
+		wndElements:Show(true)	
+		wndSection:SetAnchorOffsets(nLeft, nTop, nRight, nTop + math.abs(nElementsTop) + math.abs(nElementsBottom) + nHeight)
+		wndSection:SetSprite("BK3:UI_BK3_Holo_InsetHeaderThin")
+	else
+		wndSection:SetSprite("BK3:UI_BK3_Holo_InsetSimple")
+		wndSection:SetAnchorOffsets(nLeft, nTop, nRight, nTop + math.abs(nElementsTop) + math.abs(nElementsBottom))		
+		wndElements:Show(false)		
+	end	
+end
+
+function Configuration:UpdateCollapsibleSectionHeight(wndSection)
+	local wndContainer = wndSection:FindChild("ElementsContainer")
+	wndContainer:SetData(wndContainer:GetHeight())
+end
+
+function Configuration:SizeSectionToContent(wndSection)
+	local wndContainer = wndSection:FindChild("ElementsContainer")
+	local nHeight = wndContainer:ArrangeChildrenVert(0)
+	local nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
+	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
+	nLeft, nTop, nRight, nBottom = wndSection:GetAnchorOffsets()
+	wndSection:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
 end
 
 
@@ -150,8 +188,9 @@ function Configuration:CreateSettingItemBoolean(wndParent, tOptions)
 	
 	local wndCheck = wndItem:FindChild("Check")
 	wndCheck:SetCheck(fnValueGetter())
+	wndCheck:SetData(fnValueSetter)
 
-	return wndItem
+	return wndItem, wndCheck
 end
 
 -- @params tOptions
@@ -178,7 +217,7 @@ function Configuration:CreateSettingItemEnum(wndParent, tOptions)
 		wndDescription:SetTextColor(tOptions.clrDescription)
 	end
 	
-	return wndItem
+	return wndItem, wndDropdown
 end
 
 
@@ -196,9 +235,16 @@ function Configuration:CreateDropdown(wndParent, tOptions)
 	tOptions = tOptions or {}	
 	local tEnumNames = tOptions.tEnumNames or {}
 	local fnValueGetter = tOptions.fnValueGetter or Apollo.NoOp
+	local fnValueSetter = tOptions.fnValueSetter or Apollo.NoOp
 	
 	local wndDropdown = Apollo.LoadForm(self.xmlDoc, "HoloDropdownSmall",  wndParent, EventsHandler)	
 	local value = fnValueGetter()
+	
+	tOptions.fnValueSetter = function(v)
+		wndDropdown:SetText(tEnumNames[v] or tostring(v))
+		return fnValueSetter(v)
+	end
+	
 	wndDropdown:SetText(tEnumNames[value] or tostring(value))
 	wndDropdown:AttachWindow(self:CreatePopup(wndParent, tOptions))
 	
@@ -269,10 +315,45 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	return wndPopup
 end
 
+function Configuration:ToCallback(tTable, oKey) 
+	if not tTable then
+		error("Table may not be nil")
+	end
+	
+	if not oKey then
+		error("Key may not be nil")
+	end
+	
+	local clb = tTable[oKey]
+	if not clb then
+		error("Key must exist in table.")
+	end	
+	
+	if type(clb) ~="function" then
+		error("Key in table must be a function")
+	end
+	
+	return setmetatable(
+		{
+			owner = tTable,
+			key = oKey
+		},
+		{
+			__mode="v",
+			__call=function(t, ...) 
+				return t.owner[t.key](t.owner, unpack(arg))
+			end
+		}	
+	)
+	
+	
+end
+
 Apollo.RegisterPackage(
 	Configuration, 
 	MAJOR, 
 	MINOR, 
 	{
+		"Gemini:Logging-1.2"
 	}
 )
