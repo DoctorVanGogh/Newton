@@ -26,11 +26,14 @@ if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
-	TriggerBase:__init(o)
+	local o = TriggerBase:__init(
+		self.localization["Instance:Name"],
+		self.localization["Instance:Description"],
+		MAJOR
+	)	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 
@@ -44,13 +47,6 @@ function Trigger:__init(o)
 	return oo.rawnew(self, o)
 end
 
-function Trigger:GetName()
-	return self.localization["Instance:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["Instance:Description"]
-end
 
 function Trigger:OnEnabledChanged()
 	if self:IsEnabled() and not self[kstrFieldNameEventsRegistered] then

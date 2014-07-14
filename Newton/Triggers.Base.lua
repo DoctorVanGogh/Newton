@@ -13,7 +13,9 @@ if APkg and (APkg.nVersion or 0) >= MINOR then
 	return -- no upgrade needed
 end
 
-local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Base").tPackage
+local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
+local Configurable = Apollo.GetPackage("DoctorVanGogh:Lib:Configurable").tPackage
+local SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local glog
 
@@ -24,9 +26,7 @@ local tRegistry = {}
 setmetatable(tRegistry, { __mode="v"})
 
 if not Trigger then
-	local o = {	}	
-	o.enabled = true
-	Trigger = oo.class{ o }
+	Trigger = oo.class({}, Configurable )
 end
 
 Trigger.Event_UpdateScanbotSummonStatus = "UpdateScanbotSummonStatus"
@@ -37,16 +37,34 @@ Trigger.SummoningChoice = {
 	NoAction = 2		-- different from 'nil' insofar as 'nil' will fall through to next clause in chain, NoAction will stop (used for 'manual only') setting
 }
 
-function Trigger:__init(o)
-	self.log:debug("Trigger:__init()")	
-	o = o or {}
+function Trigger:__init(strName, strDecription, key)
+	self.log:debug("__init()")	
+	
+	local o = Configurable:__init(strName)			
+		
 	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
 	if o.enabled == nil then
 		o.enabled = true
 	end
-		
+	
 	local result = oo.rawnew(self, o)
 	
+	local settingAction = SettingEnum(
+		strDecription, 
+		Trigger.SummoningChoice, 
+		{
+			[Trigger.SummoningChoice.Summon] = self.localization["Actions:Summon"],
+			[Trigger.SummoningChoice.Dismiss] = self.localization["Actions:Dismiss"],
+			[Trigger.SummoningChoice.NoAction] = self.localization["Actions:NoAction"],				
+		},
+		function() return o:GetAction() end,
+		function(eAction) o:SetAction(eAction) end,
+		key, 
+		true
+	)
+		
+	o:AddSetting(settingAction)			
+		
 	return result
 end
 
@@ -90,18 +108,6 @@ function Trigger:GetId()
 	return nil
 end
 
-function Trigger:GetName()
-	return nil
-end
-
-function Trigger:tEnumDesciptions()
-	return nil
-end
-
-
-function Trigger:GetSettings()
-	return nil
-end
 
 function Trigger:GetCallbacks()	
 	return self.callbacks;
@@ -160,7 +166,10 @@ Apollo.RegisterPackage(
 		"Gemini:Locale-1.0",
 		"Drafto:Lib:inspect-1.2",
 		"Gemini:Logging-1.2",	
-		"DoctorVanGogh:Lib:Loop:Base",
-		"Gemini:CallbackHandler-1.0"
+		"DoctorVanGogh:Lib:Loop:Multiple",
+		"Gemini:CallbackHandler-1.0",
+		"DoctorVanGogh:Lib:Setting",
+		"DoctorVanGogh:Lib:Setting:Enum",
+		"DoctorVanGogh:Lib:Configurable"
 	}
 )

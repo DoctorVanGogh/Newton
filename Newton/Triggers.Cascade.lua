@@ -16,16 +16,21 @@ local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
 
+
 local Trigger = APkg and APkg.tPackage
 
 if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
+	local o = TriggerBase:__init(
+		"*cascade*",
+		"*cascade description*",
+		MAJOR
+	)	
 	o.children = o.children or {}
 	TriggerBase:__init(o)
 	

@@ -22,6 +22,7 @@ end
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
+local SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
 
 local Trigger = APkg and APkg.tPackage
 
@@ -53,18 +54,39 @@ local function IsRelevantMatchingChallenge(eMonitoredChallengesType, clgChalleng
 		   and (eMonitoredChallengesType == Trigger.ChallengeTypes.Any or eMonitoredChallengesType == ktChallengeTypeToInternalEnum[clgChallenge:GetType() or -1])
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
-	o[kstrFieldNameChallengeType] = o[kstrFieldNameChallengeType] or Trigger.ChallengeTypes.Any
-	TriggerBase:__init(o)
+	local o = TriggerBase:__init(
+		self.localization["Challenge:Name"],
+		self.localization["Challenge:Description"],
+		MAJOR
+	)	
+	o[kstrFieldNameChallengeType] = o[kstrFieldNameChallengeType] or Trigger.ChallengeTypes.Any	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss)
 	end
 	
 	local result = oo.rawnew(self, o)
+		
+	o:AddSetting(
+		SettingEnum(
+			self.localization["Challenge:ChallengeType"], 
+			Trigger.ChallengeTypes, 
+			{
+				[Trigger.ChallengeTypes.Ability] = Apollo.GetString("Challenges_AbilityChallenge"),
+				[Trigger.ChallengeTypes.Combat] = Apollo.GetString("Challenges_CombatChallenge"),
+				[Trigger.ChallengeTypes.General] = Apollo.GetString("Challenges_GeneralChallenge"),
+				[Trigger.ChallengeTypes.Item] = Apollo.GetString("Challenges_ItemChallenge"),
+				[Trigger.ChallengeTypes.Activate] = Apollo.GetString("Challenges_ActivateChallenge"),
+				[Trigger.ChallengeTypes.Any] = self.localization["Trigger:Settings:Any"]
+			},
+			function() return o:GetChallengeType() end,
+			function(eType) o:SetChallengeType(eType) end,
+			MAJOR..":ChallengeType"							
+		)	
+	)	
 	
 	if o:IsEnabled() then	
 		o[kstrFieldActiveChallenges] = o:InitNumActivateChallenges()	
@@ -82,37 +104,6 @@ function Trigger:__init(o)
 	end		
 	
 	return result
-end
-
-function Trigger:GetId()
-	return MAJOR
-end
-
-function Trigger:GetName()
-	return self.localization["Challenge:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["Challenge:Description"]
-end
-
-function Trigger:GetSettings()
-	return {
-		{
-			strDesciption = self.localization["Challenge:ChallengeType"],
-			tValues = Trigger.ChallengeTypes,
-			tValueNames = {
-				[Trigger.ChallengeTypes.Ability] = Apollo.GetString("Challenges_AbilityChallenge"),
-				[Trigger.ChallengeTypes.Combat] = Apollo.GetString("Challenges_CombatChallenge"),
-				[Trigger.ChallengeTypes.General] = Apollo.GetString("Challenges_GeneralChallenge"),
-				[Trigger.ChallengeTypes.Item] = Apollo.GetString("Challenges_ItemChallenge"),
-				[Trigger.ChallengeTypes.Activate] = Apollo.GetString("Challenges_ActivateChallenge"),
-				[Trigger.ChallengeTypes.Any] = self.localization["Trigger:Settings:Any"]
-			},
-			strFnGetter = "GetChallengeType",
-			strFnSetter = "SetChallengeType"
-		}
-	}
 end
 
 
@@ -212,6 +203,7 @@ Apollo.RegisterPackage(
 	{	
 		"Drafto:Lib:inspect-1.2",
 		"DoctorVanGogh:Newton:Triggers:Base",
+		"DoctorVanGogh:Lib:Setting:Enum",		
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )

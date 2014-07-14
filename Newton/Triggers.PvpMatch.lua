@@ -26,11 +26,14 @@ if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
-	TriggerBase:__init(o)
+	local o = TriggerBase:__init(
+		self.localization["PvpMatch:Name"],
+		self.localization["PvpMatch:Description"],
+		MAJOR
+	)	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.NoAction) 
@@ -44,14 +47,6 @@ function Trigger:__init(o)
 	end		
 	
 	return oo.rawnew(self, o)
-end
-
-function Trigger:GetName()
-	return self.localization["PvpMatch:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["PvpMatch:Description"]
 end
 
 

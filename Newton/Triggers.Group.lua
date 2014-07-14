@@ -20,6 +20,7 @@ end
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
+local SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
 
 local Trigger = APkg and APkg.tPackage
 
@@ -33,16 +34,37 @@ Trigger.GroupTypes = {
 	Any = 3	
 }
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
+	
+	local o = TriggerBase:__init(
+		self.localization["Default:Name"],
+		self.localization["Default:Description"],
+		MAJOR
+	)		
 	o[kstrFieldNameGroupType] = o[kstrFieldNameGroupType] or Trigger.GroupTypes.Raid
-	TriggerBase:__init(o)
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss)
 	end
+	
+	local result = oo.rawnew(self, o)
+	
+	o:AddSetting(
+		SettingEnum(
+			self.localization["Group:GroupType"], 
+			Trigger.GroupTypes, 
+			{
+				[Trigger.GroupTypes.Regular] = Apollo.GetString("Group_PartyName"),
+				[Trigger.GroupTypes.Raid] = Apollo.GetString("Group_RaidName"),
+				[Trigger.GroupTypes.Any] = self.localization["Trigger:Settings:Any"]			
+			},
+			function() return o:GetGroupType() end,
+			function(eType) o:SetGroupType(eType) end,
+			MAJOR..":GetGroupType"					
+		)	
+	)	
 	
 	if o:IsEnabled() then
 		Apollo.RegisterEventHandler("Group_Updated", "OnGroupChanged", o)	
@@ -51,31 +73,7 @@ function Trigger:__init(o)
 		o[kstrFieldNameEventsRegistered] = true		
 	end		
 	
-	return oo.rawnew(self, o)
-end
-
-function Trigger:GetName()
-	return self.localization["Group:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["Group:Description"]
-end
-
-function Trigger:GetSettings()
-	return {
-		{
-			strDesciption = self.localization["Group:GroupType"],
-			tValues = Trigger.GroupTypes,
-			tValueNames = {
-				[Trigger.GroupTypes.Regular] = Apollo.GetString("Group_PartyName"),
-				[Trigger.GroupTypes.Raid] = Apollo.GetString("Group_RaidName"),
-				[Trigger.GroupTypes.Any] = self.localization["Trigger:Settings:Any"]			
-			},
-			strFnGetter = "GetGroupType",
-			strFnSetter = "SetGroupType"
-		}
-	}
+	return result
 end
 
 function Trigger:OnEnabledChanged()
@@ -133,6 +131,7 @@ Apollo.RegisterPackage(
 	{	
 		"Drafto:Lib:inspect-1.2",
 		"DoctorVanGogh:Newton:Triggers:Base",
+		"DoctorVanGogh:Lib:Setting:Enum",		
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
 )

@@ -106,7 +106,9 @@ function Newton:OnEnable()
 		
 	local cascadeTrigger = Triggers.Cascade()
 		
-	cascadeTrigger:Add(Triggers.Stealth{enabled = false})
+	local stealth = Triggers.Stealth()
+	stealth:Enable(false)
+	cascadeTrigger:Add(stealth)
 	cascadeTrigger:Add(Triggers.Challenge())
 	cascadeTrigger:Add(Triggers.Group())	
 	cascadeTrigger:Add(Triggers.PvpMatch())	
@@ -258,11 +260,15 @@ function Newton:InitializeForm()
 		tEnumNames = {},
 		tEnumDescriptions = {},
 		strHeader = "Lorem Ipsum"
-	}
+	} 
 	for key, trigger in pairs(Triggers.Base:GetRegisteredTriggers()) do
 		table.insert(tOptions.tEnum, trigger)
 		tOptions.tEnumNames[trigger] = trigger:GetName()
-		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()		
+		
+		local setting = trigger:GetSettingsEnumerator()()
+		if setting then
+			tOptions.tEnumDescriptions[trigger] = setting:GetDescription()				-- default *should* be first element...
+		end
 	end
 	
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)

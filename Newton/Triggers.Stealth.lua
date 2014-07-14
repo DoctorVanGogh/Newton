@@ -29,11 +29,14 @@ if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
-	TriggerBase:__init(o)
+	local o = TriggerBase:__init(
+		self.localization["Stealth:Name"],
+		self.localization["Stealth:Description"],
+		MAJOR
+	)	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 
@@ -53,13 +56,6 @@ function Trigger:__init(o)
 	return result
 end
 
-function Trigger:GetName()
-	return self.localization["Stealth:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["Stealth:Description"]
-end
 
 function Trigger:OnEnabledChanged()
 	self.log:debug("OnEnabledChanged")

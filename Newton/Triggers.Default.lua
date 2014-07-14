@@ -25,12 +25,15 @@ if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init(o) 
-	self.log:debug("Trigger:__init()")
+function Trigger:__init() 
+	self.log:debug("__init()")
 	
-	o = o or {}
-	TriggerBase:__init(o)
-
+	local o = TriggerBase:__init(
+		self.localization["Default:Name"],
+		self.localization["Default:Description"],
+		MAJOR
+	)		
+	
 	if o:GetAction() == nil then 	
 		o:SetAction(TriggerBase.SummoningChoice.Summon)
 	end
@@ -49,14 +52,6 @@ function Trigger:__init(o)
 	o:OnUpdateScanbotSummonStatus()	
 	
 	return oo.rawnew(self, o)
-end
-
-function Trigger:GetName()
-	return self.localization["Default:Name"]
-end
-
-function Trigger:GetDescription()
-	return self.localization["Default:Description"]
 end
 
 function Trigger:GetShouldSummonBot()

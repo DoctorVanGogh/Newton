@@ -18,6 +18,9 @@
     <Script Name="Localization/enUS.lua"/>
     <Script Name="Localization/deDE.lua"/>
     <Script Name="Localization/frFR.lua"/>
+    <Script Name="Setting.lua"/>
+    <Script Name="Setting.Enum.lua"/>
+    <Script Name="Configurable.lua"/>
     <Script Name="Triggers.Base.lua"/>
     <Script Name="Triggers.Challenge.lua"/>
     <Script Name="Triggers.Group.lua"/>
