@@ -32,11 +32,7 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		self.localization["Stealth:Name"],
-		self.localization["Stealth:Description"],
-		MAJOR
-	)	
+	local o = TriggerBase:__init()	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 
@@ -66,6 +62,14 @@ function Trigger:OnEnabledChanged()
 	end	
 end
 
+
+function Trigger:GetName()
+	return self.localization["Stealth:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Stealth:Description"]
+end
 
 function Trigger:IsStealthed()
 	local unitPlayer = GameLib.GetPlayerUnit()

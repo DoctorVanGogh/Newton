@@ -263,12 +263,8 @@ function Newton:InitializeForm()
 	} 
 	for key, trigger in pairs(Triggers.Base:GetRegisteredTriggers()) do
 		table.insert(tOptions.tEnum, trigger)
-		tOptions.tEnumNames[trigger] = trigger:GetName()
-		
-		local setting = trigger:GetSettingsEnumerator()()
-		if setting then
-			tOptions.tEnumDescriptions[trigger] = setting:GetDescription()				-- default *should* be first element...
-		end
+		tOptions.tEnumNames[trigger] = trigger:GetName()		
+		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()
 	end
 	
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)

@@ -28,11 +28,7 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		self.localization["Default:Name"],
-		self.localization["Default:Description"],
-		MAJOR
-	)		
+	local o = TriggerBase:__init()		
 	
 	if o:GetAction() == nil then 	
 		o:SetAction(TriggerBase.SummoningChoice.Summon)
@@ -52,6 +48,14 @@ function Trigger:__init()
 	o:OnUpdateScanbotSummonStatus()	
 	
 	return oo.rawnew(self, o)
+end
+
+function Trigger:GetName()
+	return self.localization["Default:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Default:Description"]
 end
 
 function Trigger:GetShouldSummonBot()

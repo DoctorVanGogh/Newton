@@ -38,11 +38,7 @@ function Trigger:__init()
 	self.log:debug("__init()")
 	
 	
-	local o = TriggerBase:__init(
-		self.localization["Default:Name"],
-		self.localization["Default:Description"],
-		MAJOR
-	)		
+	local o = TriggerBase:__init()		
 	o[kstrFieldNameGroupType] = o[kstrFieldNameGroupType] or Trigger.GroupTypes.Raid
 	
 	if o:GetAction() == nil then 
@@ -62,7 +58,7 @@ function Trigger:__init()
 			},
 			function() return o:GetGroupType() end,
 			function(eType) o:SetGroupType(eType) end,
-			MAJOR..":GetGroupType"					
+			"GroupType"					
 		)	
 	)	
 	
@@ -88,6 +84,14 @@ function Trigger:OnEnabledChanged()
 		Apollo.RemoveEventHandler("Group_Left", self)			
 		self[kstrFieldNameEventsRegistered] = false			
 	end
+end
+
+function Trigger:GetName()
+	return self.localization["Group:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Group:Description"]
 end
 
 function Trigger:GetGroupType()

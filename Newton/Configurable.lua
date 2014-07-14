@@ -24,10 +24,9 @@ if not Configurable then
 end
 
 
-function Configurable:__init(strName)
-	self.log:debug("__init(%s)", tostring(strName))	
+function Configurable:__init()
+	self.log:debug("__init()")	
 	local o =  {
-		strName = strName,
 		settings = {}
 	}
 
@@ -46,9 +45,6 @@ function Configurable:OnLoad()
 	self.log = glog
 end
 
-function Configurable:GetName()
-	return self.strName
-end
 
 function Configurable:GetSettingsEnumerator()
 	if not self.settings then return Apollo.NoOp end

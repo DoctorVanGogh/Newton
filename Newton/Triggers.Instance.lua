@@ -29,11 +29,7 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		self.localization["Instance:Name"],
-		self.localization["Instance:Description"],
-		MAJOR
-	)	
+	local o = TriggerBase:__init()	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 
@@ -56,6 +52,14 @@ function Trigger:OnEnabledChanged()
 		Apollo.RemoveEventHandler("ChangeWorld", self)				
 		self[kstrFieldNameEventsRegistered] = false			
 	end
+end
+
+function Trigger:GetName()
+	return self.localization["Instance:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Instance:Description"]
 end
 
 function Trigger:OnChangeWorld()

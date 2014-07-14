@@ -26,11 +26,8 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		"*cascade*",
-		"*cascade description*",
-		MAJOR
-	)	
+	local o = TriggerBase:__init()
+	
 	o.children = o.children or {}
 	TriggerBase:__init(o)
 	

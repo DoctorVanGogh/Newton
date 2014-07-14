@@ -29,11 +29,7 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		self.localization["PvpMatch:Name"],
-		self.localization["PvpMatch:Description"],
-		MAJOR
-	)	
+	local o = TriggerBase:__init()	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.NoAction) 
@@ -62,6 +58,14 @@ function Trigger:OnEnabledChanged()
 		Apollo.RemoveEventHandler("ChangeWorld", self)	
 		self[kstrFieldNameEventsRegistered] = false			
 	end
+end
+
+function Trigger:GetName()
+	return self.localization["PvpMatch:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["PvpMatch:Description"]
 end
 
 function Trigger:OnMatchEnterExit()

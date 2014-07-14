@@ -57,11 +57,7 @@ end
 function Trigger:__init() 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init(
-		self.localization["Challenge:Name"],
-		self.localization["Challenge:Description"],
-		MAJOR
-	)	
+	local o = TriggerBase:__init()	
 	o[kstrFieldNameChallengeType] = o[kstrFieldNameChallengeType] or Trigger.ChallengeTypes.Any	
 	
 	if o:GetAction() == nil then 
@@ -84,7 +80,7 @@ function Trigger:__init()
 			},
 			function() return o:GetChallengeType() end,
 			function(eType) o:SetChallengeType(eType) end,
-			MAJOR..":ChallengeType"							
+			"ChallengeType"							
 		)	
 	)	
 	
@@ -126,6 +122,14 @@ function Trigger:OnEnabledChanged()
 		Apollo.RemoveEventHandler("ChallengeFailGeneric", self)		
 		self[kstrFieldNameEventsRegistered] = false			
 	end
+end
+
+function Trigger:GetName()
+	return self.localization["Challenge:Name"]
+end
+
+function Trigger:GetDescription()
+	return self.localization["Challenge:Description"]
 end
 
 function Trigger:GetChallengeType()
