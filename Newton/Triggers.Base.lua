@@ -15,6 +15,8 @@ end
 
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local Configurable = Apollo.GetPackage("DoctorVanGogh:Lib:Configurable").tPackage
+local Serializable = Apollo.GetPackage("DoctorVanGogh:Lib:Serializable").tPackage
+local ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
 local SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
 local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local glog
@@ -26,10 +28,8 @@ local tRegistry = {}
 setmetatable(tRegistry, { __mode="v"})
 
 if not Trigger then
-	Trigger = oo.class({}, Configurable )
+	Trigger = oo.class({}, Configurable, Serializable, ScanbotTrigger)
 end
-
-Trigger.Event_UpdateScanbotSummonStatus = "UpdateScanbotSummonStatus"
 
 Trigger.SummoningChoice = {
 	Summon = 0,
@@ -40,9 +40,12 @@ Trigger.SummoningChoice = {
 function Trigger:__init()
 	self.log:debug("__init()")	
 	
-	local o = Configurable:__init()			
+	local o = {}
+	
+	Serializable:__init(o)
+	Configurable:__init(o)		
+	ScanbotTrigger:__init(o)
 		
-	o.callbacks = o.callbacks or Apollo.GetPackage("Gemini:CallbackHandler-1.0").tPackage:New(o)
 	if o.enabled == nil then
 		o.enabled = true
 	end
@@ -75,24 +78,6 @@ function Trigger:OnLoad()
 	self.localization = GeminiLocale:GetLocale("Newton:Triggers")
 end
 
-function Trigger:Register(tTrigger, strKey)
-	if tTrigger == nil then
-		error("Trigger must not be nil")
-	end
-	
-	--[[	
-	if not oo.instanceof(tTrigger, TriggerBase) then
-		error("Can only register Triggers")
-	end
-	]]
-	
-	tRegistry[strKey] = tTrigger
-end
-
-function Trigger:GetRegisteredTriggers()
-	return tRegistry
-end
-
 function Trigger:GetName()
 	return nil
 end
@@ -101,25 +86,6 @@ function Trigger:GetDescription()
 	return nil
 end
 
-function Trigger:GetCallbacks()	
-	return self.callbacks;
-end
-
-
---- Return this trigger's decision on bot summoming.
--- Will return one of the Trigger.SummoningChoice values or nil trigger has no choice to make
--- @return nil or one of the Trigger.SummoningChoice fields
--- @see Trigger.SummoningChoices
-function Trigger:GetShouldSummonBot()
-	self.log:debug("Trigger(Base):GetShouldSummonBot()")
-	return nil
-end
-
-function Trigger:OnUpdateScanbotSummonStatus(bForceUpdate)	-- HACK: not clean, should only be available to protected members, would need 'scoped' model for that  - NYI
-	self.log:debug("Trigger:OnUpdateScanbotSummonStatus(%s)", tostring(bForceUpdate))
-
-	self.callbacks:Fire(Trigger.Event_UpdateScanbotSummonStatus, bForceUpdate)	
-end
 
 function Trigger:Enable(bEnable)
 	self.log:debug("Enable(%s)", tostring(bEnable))
@@ -150,6 +116,52 @@ function Trigger:SetAction(eAction)
 end
 
 
+-- [DE]SERIALIZATION
+function Trigger:Serialize()
+	local t = {
+		bEnabled = self:IsEnabled(),
+		tSettings = {}		
+	}
+	for s in self:GetSettingsEnumerator() do
+		t.tSettings[s:GetKey()] = s:GetValue()
+	end
+	return t
+end
+
+function Trigger:Deserialize(tSink)
+	self:Enable(false)
+	
+	if tSink.tSettings then
+		for s in self:GetSettingsEnumerator() do
+			local value = tSink.tSettings[s:GetKey()]
+			if value then
+				s:SetValue(value)
+			end
+		end	
+	end	
+	
+	self:Enable(tSink.bEnabled or false)
+end
+
+-- TRIGGER REGISTRY
+function Trigger:Register(tTrigger, strKey)
+	if tTrigger == nil then
+		error("Trigger must not be nil")
+	end
+	
+	--[[	
+	if not oo.instanceof(tTrigger, TriggerBase) then
+		error("Can only register Triggers")
+	end
+	]]
+	
+	tRegistry[strKey] = tTrigger
+end
+
+function Trigger:GetRegisteredTriggers()
+	return tRegistry
+end
+
 Apollo.RegisterPackage(
 	Trigger, 
 	MAJOR, 
@@ -160,6 +172,7 @@ Apollo.RegisterPackage(
 		"Gemini:CallbackHandler-1.0",
 		"DoctorVanGogh:Lib:Setting",
 		"DoctorVanGogh:Lib:Setting:Enum",
-		"DoctorVanGogh:Lib:Configurable"
+		"DoctorVanGogh:Lib:Configurable",
+		"DoctorVanGogh:Lib:Serializable"
 	}
 )

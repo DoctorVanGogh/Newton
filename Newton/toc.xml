@@ -19,8 +19,10 @@
     <Script Name="Localization/deDE.lua"/>
     <Script Name="Localization/frFR.lua"/>
     <Script Name="Setting.lua"/>
-    <Script Name="Setting.Enum.lua"/>
+	<Script Name="Setting.Enum.lua"/>
+    <Script Name="Serializable.lua"/>	
     <Script Name="Configurable.lua"/>
+    <Script Name="ScanbotTrigger.lua"/>	
     <Script Name="Triggers.Base.lua"/>
     <Script Name="Triggers.Challenge.lua"/>
     <Script Name="Triggers.Group.lua"/>
@@ -28,7 +30,7 @@
     <Script Name="Triggers.PvpMatch.lua"/>
     <Script Name="Triggers.Stealth.lua"/>
     <Script Name="Triggers.Default.lua"/>
-    <Script Name="Triggers.Cascade.lua"/>
+    <Script Name="TriggerList.lua"/>
     <Script Name="ScanbotManager.lua"/>
     <Script Name="Newton.lua"/>
     <Form Name="NewtonForm.xml"/>

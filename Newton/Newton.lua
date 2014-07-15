@@ -23,9 +23,11 @@ local glog
 local GeminiLocale
 local GeminiLogging
 local inspect
+local TriggerList
 local Triggers = {}
 local SummoningChoice
 local ScanbotManager
+local ScanbotTrigger
 local Configuration
 
 -----------------------------------------------------------------------------------------------
@@ -38,8 +40,9 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",	
 																	"DoctorVanGogh:Lib:Configuration",
-																	"DoctorVanGogh:Newton:Triggers:Base",	
-																	"DoctorVanGogh:Newton:Triggers:Cascade",																	
+																	"DoctorVanGogh:Newton:ScanbotTrigger",
+																	"DoctorVanGogh:Newton:TriggerList",																		
+																	"DoctorVanGogh:Newton:Triggers:Base",																	
 																	"DoctorVanGogh:Newton:Triggers:Group",
 																	"DoctorVanGogh:Newton:Triggers:Challenge",
 																	"DoctorVanGogh:Newton:Triggers:Stealth",																	
@@ -79,10 +82,13 @@ function Newton:OnInitialize()
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
+	ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
+	
+	TriggerList = Apollo.GetPackage("DoctorVanGogh:Newton:TriggerList").tPackage
+	
 	Triggers.Base = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage	
 	Triggers.Default = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
 	Triggers.Stealth = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Stealth").tPackage
-	Triggers.Cascade = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Cascade").tPackage
 	Triggers.Group = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Group").tPackage
 	Triggers.Instance = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Instance").tPackage
 	Triggers.PvpMatch = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:PvpMatch").tPackage
@@ -104,19 +110,19 @@ function Newton:OnEnable()
 	
 	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
 		
-	local cascadeTrigger = Triggers.Cascade()
+	local triggerList = TriggerList()
 		
 	local stealth = Triggers.Stealth()
 	stealth:Enable(false)
-	cascadeTrigger:Add(stealth)
-	cascadeTrigger:Add(Triggers.Challenge())
-	cascadeTrigger:Add(Triggers.Group())	
-	cascadeTrigger:Add(Triggers.PvpMatch())	
-	cascadeTrigger:Add(Triggers.Instance())			
-	cascadeTrigger:Add(Triggers.Default())	
-	cascadeTrigger.RegisterCallback(self, Triggers.Default.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+	triggerList:Add(stealth)
+	triggerList:Add(Triggers.Challenge())
+	triggerList:Add(Triggers.Group())	
+	triggerList:Add(Triggers.PvpMatch())	
+	triggerList:Add(Triggers.Instance())			
+	triggerList:Add(Triggers.Default())	
+	triggerList.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 	
-	self.trigger = cascadeTrigger
+	self.trigger = triggerList
 	
 	self:OnScanbotStatusUpdated(true)		
 end
@@ -217,9 +223,7 @@ function Newton:InitializeForm()
 	Configuration:CreateSettingItemEnum(
 		wndElementsContainer, 
 		{
-			tEnum = {
-				"DEBUG", "INFO", "WARN", "FATAL", "ERROR"
-			},
+			tEnum = GeminiLogging.LEVEL,
 			strHeader = self.localization["Option:LogLevel:PopupHeader"],
 			strDescription = self.localization["Option:LogLevel"],
 			fnValueGetter = function() 

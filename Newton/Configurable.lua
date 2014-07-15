@@ -24,11 +24,10 @@ if not Configurable then
 end
 
 
-function Configurable:__init()
+function Configurable:__init(o)
 	self.log:debug("__init()")	
-	local o =  {
-		settings = {}
-	}
+	o = o or {}
+	o.settings = o.settings or {}
 
 	return oo.rawnew(self, o)
 end

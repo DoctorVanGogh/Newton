@@ -1,9 +1,9 @@
 -----------------------------------------------------------------------------------------------
--- Cascading bot summoning trigger
+-- Bot summonning trigger list
 --
 -- Copyright (c) 2014 DoctorVanGogh on Wildstar forums - all rights reserved
 -----------------------------------------------------------------------------------------------
-local MAJOR,MINOR = "DoctorVanGogh:Newton:Triggers:Cascade", 1
+local MAJOR,MINOR = "DoctorVanGogh:Newton:TriggerList", 1
 
 -- Get a reference to the package information if any
 local APkg = Apollo.GetPackage(MAJOR)
@@ -13,32 +13,28 @@ if APkg and (APkg.nVersion or 0) >= MINOR then
 end
 
 local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
-local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
+local ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
 
+local glog
 
-local Trigger = APkg and APkg.tPackage
+local TriggerList = APkg and APkg.tPackage
 
-if not Trigger then
-	Trigger = oo.class({}, TriggerBase)
+if not TriggerList then
+	TriggerList = oo.class({}, ScanbotTrigger)
 end
 
-function Trigger:__init() 
+function TriggerList:__init(o) 
 	self.log:debug("__init()")
-	
-	local o = TriggerBase:__init()
-	
+
+	o = o or {}
+	ScanbotTrigger:__init(o)	
 	o.children = o.children or {}
-	TriggerBase:__init(o)
-	
-	if o:GetAction() == nil then 	
-		o:SetAction(TriggerBase.SummoningChoice.NoAction)
-	end
 	
 	return oo.rawnew(self, o)
 end
 
-function Trigger:Add(tTrigger)
+function TriggerList:Add(tTrigger)
 	self.log:debug("Add")
 
 	if tTrigger == nil then
@@ -51,15 +47,15 @@ function Trigger:Add(tTrigger)
 	
 	table.insert(self.children, tTrigger)
 	
-	tTrigger.RegisterCallback(self, TriggerBase.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")	
+	tTrigger.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")	
 end
 
-function Trigger:OnChildScanbotStatusUpdated(event, bForceRestore)
+function TriggerList:OnChildScanbotStatusUpdated(event, bForceRestore)
 	self.log:debug("OnChildScanbotStatusUpdated(%s)", tostring(bForceRestore))
 	self:OnUpdateScanbotSummonStatus(bForceRestore)
 end
 
-function Trigger:GetShouldSummonBot()
+function TriggerList:GetShouldSummonBot()
 	self.log:debug("GetShouldSummonBot")
 
 	for idx, tTrigger in ipairs(self.children) do
@@ -71,11 +67,11 @@ function Trigger:GetShouldSummonBot()
 end
 
 Apollo.RegisterPackage(
-	Trigger, 
+	TriggerList, 
 	MAJOR, 
 	MINOR, 
 	{	
-		"Drafto:Lib:inspect-1.2",
+		"DoctorVanGogh:Newton:ScanbotTrigger",
 		"DoctorVanGogh:Newton:Triggers:Base",
 		"DoctorVanGogh:Lib:Loop:Multiple"
 	}
