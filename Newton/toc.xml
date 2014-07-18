@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="DoctorVanGogh" APIVersion="8" Name="Newton" Description="Scientist Utility: Remembers which Scanbot you had picked, and auto-summons it.">
+<Addon Author="DoctorVanGogh" APIVersion="9" Name="Newton" Description="Scientist Utility: Remembers which Scanbot you had picked, and auto-summons it.">
     <Script Name="lib/GeminiLogging/inspect.lua"/>
     <Script Name="lib/GeminiLogging/GeminiLogging.lua"/>
     <Script Name="lib/GeminiAddon/GeminiAddon.lua"/>
@@ -19,10 +19,10 @@
     <Script Name="Localization/deDE.lua"/>
     <Script Name="Localization/frFR.lua"/>
     <Script Name="Setting.lua"/>
-	<Script Name="Setting.Enum.lua"/>
-    <Script Name="Serializable.lua"/>	
+    <Script Name="Setting.Enum.lua"/>
+    <Script Name="Serializable.lua"/>
     <Script Name="Configurable.lua"/>
-    <Script Name="ScanbotTrigger.lua"/>	
+    <Script Name="ScanbotTrigger.lua"/>
     <Script Name="Triggers.Base.lua"/>
     <Script Name="Triggers.Challenge.lua"/>
     <Script Name="Triggers.Group.lua"/>

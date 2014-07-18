@@ -149,17 +149,36 @@ function Trigger:Register(tTrigger, strKey)
 		error("Trigger must not be nil")
 	end
 	
-	--[[	
-	if not oo.instanceof(tTrigger, TriggerBase) then
+	--[[
+	if not oo.subclassof(tTrigger, TriggerBase) then
 		error("Can only register Triggers")
 	end
-	]]
+	--]]
+	
 	
 	tRegistry[strKey] = tTrigger
 end
 
 function Trigger:GetRegisteredTriggers()
 	return tRegistry
+end
+
+function Trigger:GetRegistryKey(tTrigger)
+	if not tTrigger then
+		error("Trigger must not be nil")		
+	end
+	
+	self.log:debug("%s", tostring(oo.instanceof(tTrigger, Trigger)))		
+	
+	if not oo.instanceof(tTrigger, Trigger) then
+		error("Can only query Triggers")
+	end	
+	
+	for idx, tRegisteredTrigger in pairs(tRegistry) do
+		if oo.instanceof(tTrigger, tRegisteredTrigger) then
+			return idx
+		end
+	end
 end
 
 Apollo.RegisterPackage(
