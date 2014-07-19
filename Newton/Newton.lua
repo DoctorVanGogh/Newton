@@ -18,13 +18,13 @@ local kstrConfigNoScientistWarning = "Not a scientist - configuration disabled!"
 local knEnforceSummoningActionInverval = -1
 
 local NAME = "Newton"
-local MAJOR, MINOR = NAME.."-1.0", 1
+local MAJOR, MINOR = NAME.."-2.0", 2
 local glog
 local GeminiLocale
 local GeminiLogging
 local inspect
 local TriggerList
-local Triggers = {}
+local TriggerBase
 local SummoningChoice
 local ScanbotManager
 local ScanbotTrigger
@@ -39,20 +39,80 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																{ 
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",	
+																	"Gemini:DB-1.0",
 																	"DoctorVanGogh:Lib:Configuration",
 																	"DoctorVanGogh:Newton:ScanbotTrigger",
-																	"DoctorVanGogh:Newton:TriggerList",																		
-																	"DoctorVanGogh:Newton:Triggers:Base",																	
-																	"DoctorVanGogh:Newton:Triggers:Group",
-																	"DoctorVanGogh:Newton:Triggers:Challenge",
-																	"DoctorVanGogh:Newton:Triggers:Stealth",																	
-																	"DoctorVanGogh:Newton:Triggers:Instance",
-																	"DoctorVanGogh:Newton:Triggers:PvpMatch",
-																	"DoctorVanGogh:Newton:Triggers:Default",
+																	"DoctorVanGogh:Newton:TriggerList",																																			
 																	"DoctorVanGogh:Newton:ScanbotManager"
 																}
 															)
-															
+	
+local dbDefaults = {
+	char = {
+		persistScanbot = true,
+		scanbotIndex = 0,
+		currentProfileName = "Default"
+	},
+	global = {
+		logLevel = "INFO"	
+	},
+	profile = { 
+		triggerList = {
+			{
+				key = "DoctorVanGogh:Newton:Triggers:Stealth",
+				values = {
+					bEnabled = false,
+					tSettings = {
+						Action = 1
+					}
+				}
+			}, {
+				key = "DoctorVanGogh:Newton:Triggers:Challenge",
+				values = {
+					bEnabled = true,
+					tSettings = {
+						Action = 1,
+						ChallengeType = 999
+					}
+				}
+			}, {
+				key = "DoctorVanGogh:Newton:Triggers:Group",
+				values = {
+					bEnabled = true,
+					tSettings = {
+						Action = 1,
+						GroupType = 2
+					}
+				}
+			}, {
+				key = "DoctorVanGogh:Newton:Triggers:Instance",
+				values = {
+					bEnabled = true,
+					tSettings = {
+						Action = 1
+					}
+				}
+			}, {
+				key = "DoctorVanGogh:Newton:Triggers:Instance",
+				values = {
+					bEnabled = true,
+					tSettings = {
+						Action = 1
+					}
+				}
+			}, {
+				key = "DoctorVanGogh:Newton:Triggers:Default",
+				values = {
+					bEnabled = true,
+					tSettings = {
+						Action = 0
+					}
+				}
+			} 
+		}
+	}
+}
+	
 function Newton:OnInitialize()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
@@ -85,22 +145,19 @@ function Newton:OnInitialize()
 	ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
 	
 	TriggerList = Apollo.GetPackage("DoctorVanGogh:Newton:TriggerList").tPackage
-	
-	Triggers.Base = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage	
-	Triggers.Default = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Default").tPackage
-	Triggers.Stealth = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Stealth").tPackage
-	Triggers.Group = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Group").tPackage
-	Triggers.Instance = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Instance").tPackage
-	Triggers.PvpMatch = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:PvpMatch").tPackage
-	Triggers.Challenge = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Challenge").tPackage
-	
+	TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
+		
 	ScanbotManager = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotManager").tPackage			
 	
-	SummoningChoice = Triggers.Default.SummoningChoice
+	SummoningChoice = TriggerBase.SummoningChoice
 	
 	Configuration = Apollo.GetPackage("DoctorVanGogh:Lib:Configuration").tPackage
+	
+	
+	self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, dbDefaults, true)
+	self.db.RegisterCallback(self, "OnDatabaseShutdown", "DatabaseShutdown")
+	self.db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")	
 end
-
 
 -- Called when player has loaded and entered the world
 function Newton:OnEnable()
@@ -108,11 +165,11 @@ function Newton:OnEnable()
 
 	self.ready = true
 	
-	self.scanbotManager = ScanbotManager(self.nPersistedScanbotIndex)
-		
+	
 	local triggerList = TriggerList()
+	self.trigger = triggerList
 		
-	local stealth = Triggers.Stealth()
+	--[[local stealth = Triggers.Stealth()
 	stealth:Enable(false)
 	triggerList:Add(stealth)
 	triggerList:Add(Triggers.Challenge())
@@ -121,10 +178,29 @@ function Newton:OnEnable()
 	triggerList:Add(Triggers.Instance())			
 	triggerList:Add(Triggers.Default())	
 	triggerList.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
+		
+	--]]
 	
-	self.trigger = triggerList
+	self:SetPersistScanbot(self.db.char.persistScanbot)
+	self.strLogLevel = self.db.global.logLevel
+	self.log:SetLevel(self.strLogLevel)
+	self.scanbotManager = ScanbotManager(self.db.char.scanbotIndex)	
+	
+	self.trigger:Deserialize(self.db.profile.triggerList)
 	
 	self:OnScanbotStatusUpdated(true)		
+end
+
+
+function Newton:OnProfileChanged(db, profile)
+	self.trigger:Deserialize(profile.triggerList)
+end
+
+function Newton:DatabaseShutdown(db)
+	self.db.char.persistScanbot = self:GetPersistScanbot()
+	self.db.char.scanbotIndex = self.scanbotManager:GetScanbotIndex()
+	self.db.global.logLevel = self.strLogLevel
+	self.db.profile.triggerList = self.trigger:Serialize()
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
@@ -197,11 +273,11 @@ function Newton:InitializeForm()
 		wndElementsContainer,
 		{
 			tEnum = { 
-				"(NYI)"
+				self.db:GetProfiles()
 			},
 			strHeader = self.localization["Option:Profile:PopupHeader"],
 			strDescription = self.localization["Option:Profile"],
-			--fnValueGetter = ...
+			fnValueGetter = function() return self.db.char.currentProfileName end
 			--fnValueSetter = ...
 		}
 	)
@@ -210,6 +286,9 @@ function Newton:InitializeForm()
 	local wndAddElement = Apollo.LoadForm(self.xmlDoc, "AddElementButton", wndDropdown:GetParent(), self)
 	local wndRemoveElement = Apollo.LoadForm(self.xmlDoc, "RemoveElementButton", wndDropdown:GetParent(), self)
 	wndDropdown:SetAnchorOffsets(nLeft + wndAddElement:GetWidth(), nTop, nRight - wndRemoveElement:GetWidth(), nBottom)
+	wndAddElement:Enable(false)
+	wndRemoveElement:Enable(false)
+	wndDropdown:Enable(false)
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
 	
@@ -265,7 +344,7 @@ function Newton:InitializeForm()
 		tEnumDescriptions = {},
 		strHeader = "Lorem Ipsum"
 	} 
-	for key, trigger in pairs(Triggers.Base:GetRegisteredTriggers()) do
+	for key, trigger in pairs(TriggerBase:GetRegisteredTriggers()) do
 		table.insert(tOptions.tEnum, trigger)
 		tOptions.tEnumNames[trigger] = trigger:GetName()		
 		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()
@@ -383,58 +462,6 @@ function Newton:SetPersistScanbot(bValue)
 end
 
 
------------------------------------------------------------------------------------------------
--- Persistence
------------------------------------------------------------------------------------------------
-function Newton:OnSave(eLevel)
-	glog:debug("OnSaveSettings(%s)", tostring(eLevel))	
-	
-	-- We save at character level,
-	if (eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character) then
-		return
-	end
-
-		
-	local tSave = { 
-		version = {
-			MAJOR = MAJOR,
-			MINOR = MINOR
-		}, 
-		nScanbotProfileIndex = self.scanbotManager:GetScanbotIndex(),
-		bAutoSummonScanbot = self:GetAutoSummonScanbot(),
-		bPersistScanbot = self:GetPersistScanbot(),
-		strLogLevel = self.strLogLevel
-	}
-		
-	glog:debug("Persist: %s", inspect(tSave))
-	
-	return tSave
-end
-
-
-function Newton:OnRestore(eLevel, tSavedData)
-	glog:debug("OnRestoreSettings(%s)=%s", tostring(eLevel), inspect(tSavedData))	
-
-	-- We restore at character level,
-	if (eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character) then
-		return
-	end
-
-	if not tSavedData or tSavedData.version.MAJOR ~= MAJOR then
-		self:SetAutoSummonScanbot(true)
-		self:SetPersistScanbot(true)
-		self.strLogLevel = kstrDefaultLogLevel		
-	else
-		self:SetAutoSummonScanbot(tSavedData.bAutoSummonScanbot or false)
-		self:SetPersistScanbot(tSavedData.bPersistScanbot)
-		self.nPersistedScanbotIndex = tSavedData.nScanbotProfileIndex
-		self.strLogLevel = tSavedData.strLogLevel or kstrDefaultLogLevel		
-	end	
-	
-	self.log:SetLevel(self.strLogLevel)	
-end
-
-
 ---------------------------------------------------------------------------------------------------
 -- NewtonConfigForm Functions
 ---------------------------------------------------------------------------------------------------
@@ -446,7 +473,6 @@ function Newton:ToggleWindow()
 		self.wndMain:ToFront()
 	end
 end
-
 
 
 

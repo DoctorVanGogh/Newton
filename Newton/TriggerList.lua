@@ -88,12 +88,18 @@ end
 
 function TriggerList:Deserialize(tSink)	
 	for idx, tTrigger in ipairs(self.children) do
-		tTrigger.UnregisterAllCallbacks(self)
+		if tTrigger.UnregisterAllCallbacks then
+			tTrigger.UnregisterAllCallbacks(self)
+		end
 	end
 	
 	self.children = {}
 	
-	for key, tValue in pairs(tSink) do
+	for idx, tComposite in ipairs(tSink) do
+
+		local key = tComposite.key
+		local tValue = tComposite.values
+		self.log:debug("%s = %s", tostring(key), inspect(tValue))
 		local tTriggerClass = TriggerBase:GetRegisteredTriggers()[key]
 		local tTrigger
 		if tTriggerClass then
