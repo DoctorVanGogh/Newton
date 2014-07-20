@@ -69,8 +69,14 @@ function Trigger:__init()
 	o:AddSetting(
 		SettingEnum(
 			self.localization["Challenge:ChallengeType"], 
-			Trigger.ChallengeTypes, 
 			{
+				Trigger.ChallengeTypes.Ability,
+				Trigger.ChallengeTypes.Combat,
+				Trigger.ChallengeTypes.General,
+				Trigger.ChallengeTypes.Item,
+				Trigger.ChallengeTypes.Activate,
+				Trigger.ChallengeTypes.Any,
+			}, {
 				[Trigger.ChallengeTypes.Ability] = Apollo.GetString("Challenges_AbilityChallenge"),
 				[Trigger.ChallengeTypes.Combat] = Apollo.GetString("Challenges_CombatChallenge"),
 				[Trigger.ChallengeTypes.General] = Apollo.GetString("Challenges_GeneralChallenge"),

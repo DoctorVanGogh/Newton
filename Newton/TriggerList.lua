@@ -53,6 +53,22 @@ function TriggerList:Add(tTrigger)
 	end		
 end
 
+function TriggerList:GetEnumerator()
+	if not self.children then return Apollo.NoOp end
+
+	local i = 0
+	local n = table.getn(self.children)
+	
+	return 	function()
+				i = i + 1
+				if i <= n then return self.children[i] end
+			end
+end
+
+function TriggerList:GetCount()
+	return table.getn(self.children)
+end
+
 function TriggerList:OnChildScanbotStatusUpdated(event, bForceRestore)
 	self.log:debug("OnChildScanbotStatusUpdated(%s)", tostring(bForceRestore))
 	self:OnUpdateScanbotSummonStatus(bForceRestore)

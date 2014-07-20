@@ -31,7 +31,7 @@ end
 Trigger.GroupTypes = {
 	Regular = 1,
 	Raid = 2,
-	Any = 3	
+	Any = 999	
 }
 
 function Trigger:__init() 
@@ -50,8 +50,11 @@ function Trigger:__init()
 	o:AddSetting(
 		SettingEnum(
 			self.localization["Group:GroupType"], 
-			Trigger.GroupTypes, 
 			{
+				Trigger.GroupTypes.Regular,
+				Trigger.GroupTypes.Raid,
+				Trigger.GroupTypes.Any,
+			}, {
 				[Trigger.GroupTypes.Regular] = Apollo.GetString("Group_PartyName"),
 				[Trigger.GroupTypes.Raid] = Apollo.GetString("Group_RaidName"),
 				[Trigger.GroupTypes.Any] = self.localization["Trigger:Settings:Any"]			

@@ -7,6 +7,7 @@ require "GameLib"
 require "PlayerPathLib"
 require "ScientistScanBotProfile"
 require "ApolloTimer"
+require "ApolloColor"
 
 -----------------------------------------------------------------------------------------------
 -- Constants
@@ -14,6 +15,11 @@ require "ApolloTimer"
 local kstrDefaultLogLevel = "WARN"
 local kstrInitNoScientistWarning = "Player not a scientist - consider disabling Addon %s for this character!"
 local kstrConfigNoScientistWarning = "Not a scientist - configuration disabled!"
+local kstrYes = Apollo.GetString("CRB_Yes")
+local kstrNo = Apollo.GetString("CRB_No")
+
+local kclrSettingDefault = ApolloColor.new("UI_TextHoloBodyCyan")
+local kclrSettingOther = ApolloColor.new("UI_TextHoloBody")
 
 local knEnforceSummoningActionInverval = -1
 
@@ -29,6 +35,8 @@ local SummoningChoice
 local ScanbotManager
 local ScanbotTrigger
 local Configuration
+local SettingEnum
+local oo 
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -43,7 +51,9 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"DoctorVanGogh:Lib:Configuration",
 																	"DoctorVanGogh:Newton:ScanbotTrigger",
 																	"DoctorVanGogh:Newton:TriggerList",																																			
-																	"DoctorVanGogh:Newton:ScanbotManager"
+																	"DoctorVanGogh:Newton:ScanbotManager",
+																	"DoctorVanGogh:Lib:Setting:Enum",
+																	"DoctorVanGogh:Lib:Loop:Multiple"
 																}
 															)
 	
@@ -93,7 +103,7 @@ local dbDefaults = {
 					}
 				}
 			}, {
-				key = "DoctorVanGogh:Newton:Triggers:Instance",
+				key = "DoctorVanGogh:Newton:Triggers:PvpMatch",
 				values = {
 					bEnabled = true,
 					tSettings = {
@@ -112,6 +122,16 @@ local dbDefaults = {
 		}
 	}
 }
+	
+	
+local function SizeTriggerToSettingsHeight(wndTrigger)
+	local wndContainer = wndTrigger:FindChild("SettingsContainer")
+	local nHeight = wndContainer:ArrangeChildrenVert(0)
+	local nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
+	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
+	nLeft, nTop, nRight, nBottom = wndTrigger:GetAnchorOffsets()
+	wndTrigger:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+end	
 	
 function Newton:OnInitialize()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
@@ -153,6 +173,9 @@ function Newton:OnInitialize()
 	
 	Configuration = Apollo.GetPackage("DoctorVanGogh:Lib:Configuration").tPackage
 	
+	SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
+	
+	oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 	
 	self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, dbDefaults, true)
 	self.db.RegisterCallback(self, "OnDatabaseShutdown", "DatabaseShutdown")
@@ -168,39 +191,126 @@ function Newton:OnEnable()
 	
 	local triggerList = TriggerList()
 	self.trigger = triggerList
-		
-	--[[local stealth = Triggers.Stealth()
-	stealth:Enable(false)
-	triggerList:Add(stealth)
-	triggerList:Add(Triggers.Challenge())
-	triggerList:Add(Triggers.Group())	
-	triggerList:Add(Triggers.PvpMatch())	
-	triggerList:Add(Triggers.Instance())			
-	triggerList:Add(Triggers.Default())	
-	triggerList.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
-		
-	--]]
-	
+			
 	self:SetPersistScanbot(self.db.char.persistScanbot)
 	self.strLogLevel = self.db.global.logLevel
 	self.log:SetLevel(self.strLogLevel)
 	self.scanbotManager = ScanbotManager(self.db.char.scanbotIndex)	
 	
-	self.trigger:Deserialize(self.db.profile.triggerList)
+	self:UpdateTriggerList()
+	if self.wndTriggers then
+		self:UpdateTriggerUI()
+	end
 	
 	self:OnScanbotStatusUpdated(true)		
 end
 
 
 function Newton:OnProfileChanged(db, profile)
-	self.trigger:Deserialize(profile.triggerList)
+	self:UpdateTriggerList()
+	self:UpdateTriggerUI()
+end
+
+function Newton:UpdateTriggerList(bSkipWindowUpdate)
+	self.trigger:Deserialize(self.db.profile.triggerList)
+end
+
+function Newton:UpdateTriggerUI()
+	if self.wndTriggers and self.trigger then
+		local wndElementsContainer = self.wndTriggers:FindChild("ElementsContainer")
+		wndElementsContainer:DestroyChildren()
+		
+		local idx = 0
+		local nCount = self.trigger:GetCount()
+		for tTrigger in self.trigger:GetEnumerator() do
+			idx = idx + 1 
+			local wndTrigger = Apollo.LoadForm(self.xmlDoc, "TriggerItem", wndElementsContainer, self)
+			local wndEnableBtn = wndTrigger:FindChild("EnableBtn")
+			wndEnableBtn:SetText(tTrigger:GetName())
+			wndEnableBtn:SetData(tTrigger)	
+			wndEnableBtn:SetCheck(tTrigger:IsEnabled())
+			
+			local strEnabled
+			if tTrigger:IsEnabled() then
+				strEnabled = kstrYes
+			else
+				strEnabled = kstrNo
+			end
+			
+			wndEnableBtn:SetTooltip(string.format(self.localization["Option:Trigger:Enabled"], strEnabled))
+			
+			local wndUp = wndTrigger:FindChild("UpBtn")
+			wndUp:Enable(false)			
+			local wndDown = wndTrigger:FindChild("DownBtn")
+			wndDown:Enable(false)
+			
+			local wndRemoveItemBtn = wndTrigger:FindChild("RemoveItemBtn")
+			wndRemoveItemBtn:Enable(false)
+			
+			local wndSettingsContainer = wndTrigger:FindChild("SettingsContainer")
+			
+			for tSetting in tTrigger:GetSettingsEnumerator() do
+				local wndSetting
+				
+				local clrSetting
+				if tSetting:GetKey() then
+					clrSetting = kclrSettingDefault
+				else
+					clrSetting = kclrSettingOther
+				end
+				
+				if oo.instanceof(tSetting, SettingEnum) then
+				
+					local tOptions = {
+						tEnum = tSetting:GetValues(),
+						tEnumNames = tSetting:GetNames(),						
+						strDescription = tSetting:GetDescription(),
+						clrDescription = clrSetting,
+						fnValueGetter = function() return tSetting:GetValue() end,
+						fnValueSetter = function(value) 
+							local result = tSetting:SetValue(value) 
+							self:UpdateProfile()
+							return result								
+						end							
+					}
+					
+					wndSetting = Configuration:CreateSettingItemEnum(
+						wndSettingsContainer,
+						tOptions
+					)
+				end				
+			end				
+			-- size each trigger correctly
+			SizeTriggerToSettingsHeight(wndTrigger)												
+		end
+
+		-- size triggers list correctly
+		local nTriggersHeight = wndElementsContainer:ArrangeChildrenVert(0)
+		local nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
+		wndElementsContainer:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nTriggersHeight)
+		
+		-- size entire triggers block correctly (incl. profile selection and explanation)
+		local nHeight = self.wndTriggers:ArrangeChildrenVert(0)
+		nLeft, nTop, nRight, nBottom = self.wndTriggers:GetAnchorOffsets()
+		self.wndTriggers:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nHeight)
+
+		-- size containing 'triggers' section correctly
+		Configuration:SizeSectionToContent(self.wndTriggers:GetParent():GetParent())
+		
+		-- size entire config scroll area correctly
+		self.wndMain:FindChild("Content"):ArrangeChildrenVert(0)
+	end
+end
+
+function Newton:UpdateProfile()
+	self.db.profile.triggerList = self.trigger:Serialize()
 end
 
 function Newton:DatabaseShutdown(db)
 	self.db.char.persistScanbot = self:GetPersistScanbot()
 	self.db.char.scanbotIndex = self.scanbotManager:GetScanbotIndex()
 	self.db.global.logLevel = self.strLogLevel
-	self.db.profile.triggerList = self.trigger:Serialize()
+	self:UpdateProfile()
 end
 
 function Newton:OnSlashCommand(strCommand, strParam)
@@ -232,7 +342,7 @@ function Newton:OnDocumentReady()
 	end
 	
 	self:InitializeForm()		
-
+		
 	Apollo.RegisterEventHandler("WindowManagementReady", "OnWindowManagementReady", self)
 	
 end
@@ -323,7 +433,13 @@ function Newton:InitializeForm()
 	GeminiLocale:TranslateWindow(self.localization, self.wndMain)				
 	
 	wndMain:Show(false, true);
-			
+		
+	self.wndTriggers = wndTriggersBlock
+		
+	if self.trigger then
+		self:UpdateTriggerUI()
+	end		
+		
 	if knEnforceSummoningActionInverval > 0 then
 		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
 	end
@@ -352,12 +468,7 @@ function Newton:InitializeForm()
 	
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
 	wndAddBtn:AttachWindow(popup)		
-	
-	
-	
-	--self.wndMain:FindChild("AutoSummonCheckbox"):SetCheck(self:GetAutoSummonScanbot())
-	--self.wndMain:FindChild("PersistBotChoiceCheckbox"):SetCheck(self:GetPersistScanbot())	
-	--self.wndMain:FindChild("LogLevelButton"):SetText(self.strLogLevel)	
+		
 end
 
 function Newton:OnWindowManagementReady()
@@ -482,4 +593,19 @@ end
 function Newton:RemoveElementSignal( wndHandler, wndControl, eMouseButton )
 end
 
-
+function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
+	if wndControl ~= wndHandler then return end
+	
+	local tTrigger = wndHandler:GetData()
+	
+	tTrigger:Enable(wndHandler:IsChecked())	
+	local strEnabled
+	if wndHandler:IsChecked() then
+		strEnabled = kstrYes
+	else
+		strEnabled = kstrNo
+	end	
+	wndHandler:SetTooltip(string.format(self.localization["Option:Trigger:Enabled"], strEnabled))		
+	
+	self:UpdateProfile()
+end

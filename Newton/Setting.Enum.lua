@@ -23,9 +23,9 @@ if not Setting then
 end
 
 
-function Setting:__init(strDescription, tValues, tValueNames, fnGetter, fnSetter, tag)
+function Setting:__init(strfnGetDescription, tValues, tValueNames, fnGetter, fnSetter, tag)
 	SettingBase.log:debug("__init")	
-	local o = SettingBase:__init(strDescription, fnGetter, fnSetter, tag)
+	local o = SettingBase:__init(strfnGetDescription, fnGetter, fnSetter, tag)
 		
 	o.tValues = tValues or {}
 	o.tValueNames = tValueNames or {}
@@ -46,6 +46,9 @@ function Setting:GetValueName(oValue)
 	return self.tValueNames[oValue]
 end
 
+function Setting:GetNames()
+	return self.tValueNames
+end
 
 
 Apollo.RegisterPackage(

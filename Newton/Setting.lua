@@ -23,10 +23,18 @@ if not Setting then
 end
 
 
-function Setting:__init(strDescription, fnGetter, fnSetter, key, ...)
+function Setting:__init(strfnGetDescription, fnGetter, fnSetter, key, ...)
 	self.log:debug("__init()")	
+	
+	local fnDescription
+	if type(strfnGetDescription) == "string" then
+		fnGetDescription = function() return strfnGetDescription end
+	else
+		fnGetDescription = strfnGetDescription
+	end
+	
 	local o = {
-		strDescription = strDescription or "",
+		fnGetDescription = fnGetDescription or Apollo.NoOp,
 		fnGetter = fnGetter or Apollo.NoOp,
 		fnSetter = fnSetter or Apollo.NoOp,
 		oKey = key,
@@ -54,7 +62,7 @@ function Setting:OnLoad()
 end
 
 function Setting:GetDescription()
-	return self.strDescription
+	return self.fnGetDescription()
 end
 
 function Setting:GetValue(...)

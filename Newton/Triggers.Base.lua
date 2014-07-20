@@ -53,9 +53,12 @@ function Trigger:__init()
 	local result = oo.rawnew(self, o)
 	
 	local settingAction = SettingEnum(
-		result:GetDescription(), 
-		Trigger.SummoningChoice, 
+		function() return o:GetDescription() end,
 		{
+			Trigger.SummoningChoice.Summon,
+			Trigger.SummoningChoice.Dismiss,
+			Trigger.SummoningChoice.NoAction,
+		}, {
 			[Trigger.SummoningChoice.Summon] = self.localization["Actions:Summon"],
 			[Trigger.SummoningChoice.Dismiss] = self.localization["Actions:Dismiss"],
 			[Trigger.SummoningChoice.NoAction] = self.localization["Actions:NoAction"],				
