@@ -191,6 +191,7 @@ function Newton:OnEnable()
 	
 	local triggerList = TriggerList()
 	self.trigger = triggerList
+	self.trigger.RegisterCallback(self, TriggerList.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
 			
 	self:SetPersistScanbot(self.db.char.persistScanbot)
 	self.strLogLevel = self.db.global.logLevel

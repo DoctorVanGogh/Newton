@@ -175,6 +175,13 @@ function Trigger:OnChallengeStart(challenge)
 	self.log:debug("OnChallengeStart")
 	
 	if IsRelevantMatchingChallenge(self:GetChallengeType(), challenge) then
+		-- sometimes we get multiple events for a single challenge - this screws up our count
+		local challengeId = challenge:GetId()
+		for idx, tRunningChallenge in ipairs(self[kstrFieldActiveChallenges]) do
+			if tRunningChallenge:GetId() == challengeId then
+				return
+			end
+		end	
 		table.insert(self[kstrFieldActiveChallenges], challenge)		
 		self:OnUpdateScanbotSummonStatus()
 	end

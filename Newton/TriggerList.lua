@@ -126,6 +126,8 @@ function TriggerList:Deserialize(tSink)
 		end	
 		self:Add(tTrigger)
 	end
+	
+	self:OnUpdateScanbotSummonStatus(true)
 end
 
 
