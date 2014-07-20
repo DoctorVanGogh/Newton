@@ -32,7 +32,7 @@ function EventsHandler:OnSignalEnumCoice(wndHandler, wndControl, eMouseButton )
 	
 	fnSetter(value)	
 	
-	wndHandler:GetParent():GetParent():Close()
+	wndHandler:GetParent():GetParent():GetParent():Close()
 	--wndHandler:GetParent():GetParent()
 end
 
@@ -281,14 +281,12 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	
 	local wndPopup = Apollo.LoadForm(self.xmlDoc, "HoloEnumPopup",  wndParent, EventsHandler)
 	local wndContainer = wndPopup:FindChild("ElementList")
-	
-	if strHeader then
-		wndPopup:FindChild("Header"):SetText(strHeader)
-	end
+		
+	wndPopup:FindChild("Header"):SetText(strHeader)	
 	
 	for idx, oElement in ipairs(tEnum) do
 		local strFormName
-		if #tOptions == 1 then
+		if #tEnum == 1 then
 			strFormName = "HoloEnumPopupElementSingle"
 		else
 			if idx == 1 then
@@ -302,11 +300,12 @@ function Configuration:CreatePopup(wndParent, tOptions)
 		
 		local wndElement = Apollo.LoadForm(self.xmlDoc, strFormName, wndContainer, EventsHandler)
 		local strName = tEnumNames[oElement] or tostring(oElement)
-		wndElement:SetText(strName)
-		wndElement:SetData({oElement, fnValueSetter})
+		local wndButton = wndElement:FindChild("Button")
+		wndButton:SetText(strName)
+		wndButton:SetData({oElement, fnValueSetter})
 		local strDescription = tEnumDescriptions[oElement]
 		if strDescription then
-			wndElement:SetTooltip(tostring(strDescription))
+			wndButton:SetTooltip(tostring(strDescription))
 		end
 		
 		local nTextWidth = Apollo.GetTextWidth("CRB_Button", strName)		
@@ -317,8 +316,6 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	
 	nMinWidth = nMinWidth + 14 			-- Button uses some hardcoded padding values left & right!
 		
-	glog:debug("MinWidth = %f", nMinWidth)
-	
 	wndPopup:SetAnchorOffsets(
 		0, 
 		0, 

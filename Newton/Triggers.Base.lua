@@ -171,8 +171,6 @@ function Trigger:GetRegistryKey(tTrigger)
 		error("Trigger must not be nil")		
 	end
 	
-	self.log:debug("%s", tostring(oo.instanceof(tTrigger, Trigger)))		
-	
 	if not oo.instanceof(tTrigger, Trigger) then
 		error("Can only query Triggers")
 	end	
