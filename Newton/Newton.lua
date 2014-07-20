@@ -610,3 +610,6 @@ function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
 	
 	self:UpdateProfile()
 end
+
+
+

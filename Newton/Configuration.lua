@@ -74,6 +74,14 @@ function EventsHandler:SectionItemCheckChange( wndHandler, wndControl, eMouseBut
 	end
 end
 
+function EventsHandler:ShowPopup( wndHandler, wndControl )
+	if wndHandler ~= wndControl then
+		return
+	end
+	
+	wndHandler:ToFront()
+end
+
 function Configuration:OnLoad()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
@@ -246,7 +254,8 @@ function Configuration:CreateDropdown(wndParent, tOptions)
 	end
 	
 	wndDropdown:SetText(tEnumNames[value] or tostring(value))
-	wndDropdown:AttachWindow(self:CreatePopup(wndParent, tOptions))
+	local wndPopup = self:CreatePopup(wndParent, tOptions)
+	wndDropdown:AttachWindow(wndPopup)	
 	
 	return wndDropdown
 end
@@ -268,7 +277,7 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	local tEnumDescriptions = tOptions.tEnumDescriptions or {}
 	local fnValueSetter = tOptions.fnValueSetter or Apollo.NoOp
 	local strHeader = tOptions.strHeader
-	local nMinWidth = math.max(tOptions.nMinWidth or 0, 0)
+	local nMinWidth = math.max(tOptions.nMinWidth or 0, 80)
 	
 	local wndPopup = Apollo.LoadForm(self.xmlDoc, "HoloEnumPopup",  wndParent, EventsHandler)
 	local wndContainer = wndPopup:FindChild("ElementList")
@@ -305,6 +314,10 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	end	
 	local nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
 	local nHeightTotal = wndContainer:ArrangeChildrenVert(0)
+	
+	nMinWidth = nMinWidth + 14 			-- Button uses some hardcoded padding values left & right!
+		
+	glog:debug("MinWidth = %f", nMinWidth)
 	
 	wndPopup:SetAnchorOffsets(
 		0, 
