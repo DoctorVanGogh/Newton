@@ -37,10 +37,10 @@ Trigger.SummoningChoice = {
 	NoAction = 2		-- different from 'nil' insofar as 'nil' will fall through to next clause in chain, NoAction will stop (used for 'manual only') setting
 }
 
-function Trigger:__init()
+function Trigger:__init(o)
 	self.log:debug("__init()")	
 	
-	local o = {}
+	o = o or {}
 	
 	Serializable:__init(o)
 	Configurable:__init(o)		
@@ -115,7 +115,9 @@ function Trigger:SetAction(eAction)
 		
 	self.eAction = eAction	
 	
-	self:OnUpdateScanbotSummonStatus()
+	if self.OnUpdateScanbotSummonStatus then	-- HACK: defensive coding to allow calling setter from not fully initialized deserializer
+		self:OnUpdateScanbotSummonStatus()
+	end
 end
 
 
@@ -131,19 +133,38 @@ function Trigger:Serialize()
 	return t
 end
 
-function Trigger:Deserialize(tSink)
-	self:Enable(false)
-	
-	if tSink.tSettings then
-		for s in self:GetSettingsEnumerator() do
-			local value = tSink.tSettings[s:GetKey()]
-			if value then
-				s:SetValue(value)
-			end
+function Trigger:Deserialize(tSink, class)
+
+	--[[
+	*not yet working* - need closures over undefined 'o' for settings...
+	if self == Trigger and class then
+		-- Deserialize called on the metaclass => treat as constructor alias
+		local o = {}
+		if tSink.tSettings then
+			for s in class:GetSettingsEnumerator() do
+				local value = tSink.tSettings[s:GetKey()]
+				if value then
+					-- *problem*
+					s:SetValue(value)
+				end
+			end	
+		end			
+		
+	else--]]		
+		-- Deserialize called for an *existing* trigger object
+		self:Enable(false)
+		
+		if tSink.tSettings then
+			for s in self:GetSettingsEnumerator() do
+				local value = tSink.tSettings[s:GetKey()]
+				if value then
+					s:SetValue(value)
+				end
+			end	
 		end	
-	end	
-	
-	self:Enable(tSink.bEnabled or false)
+		
+		self:Enable(tSink.bEnabled or false)
+	--end
 end
 
 -- TRIGGER REGISTRY
@@ -175,11 +196,14 @@ function Trigger:GetRegistryKey(tTrigger)
 		error("Can only query Triggers")
 	end	
 	
+	local tTriggerClass = oo.classof(tTrigger)
+
 	for idx, tRegisteredTrigger in pairs(tRegistry) do
-		if oo.instanceof(tTrigger, tRegisteredTrigger) then
+		if tTriggerClass == tRegisteredTrigger then
 			return idx
 		end
 	end
+	
 end
 
 Apollo.RegisterPackage(

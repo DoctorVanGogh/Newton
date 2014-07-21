@@ -34,11 +34,12 @@ Trigger.GroupTypes = {
 	Any = 999	
 }
 
-function Trigger:__init() 
+function Trigger:__init(o) 
 	self.log:debug("__init()")
 	
+	o = o or {}
+	TriggerBase:__init(o)	
 	
-	local o = TriggerBase:__init()		
 	o[kstrFieldNameGroupType] = o[kstrFieldNameGroupType] or Trigger.GroupTypes.Raid
 	
 	if o:GetAction() == nil then 
@@ -106,7 +107,10 @@ function Trigger:SetGroupType(eGroupType)
 	
 	self[kstrFieldNameGroupType] = eGroupType
 	
-	self:OnGroupChanged()
+	if self.OnGroupChanged then	-- HACK: defensive coding to allow calling setter from not fully initialized deserializer
+		self:OnGroupChanged()
+	end	
+
 end
 
 function Trigger:OnGroupChanged()

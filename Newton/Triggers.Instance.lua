@@ -26,10 +26,11 @@ if not Trigger then
 	Trigger = oo.class({}, TriggerBase)
 end
 
-function Trigger:__init() 
+function Trigger:__init(o) 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init()	
+	o = o or {}
+	TriggerBase:__init(o)	
 	
 	if o:GetAction() == nil then 
 		o:SetAction(TriggerBase.SummoningChoice.Dismiss) 

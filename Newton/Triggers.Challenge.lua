@@ -54,10 +54,11 @@ local function IsRelevantMatchingChallenge(eMonitoredChallengesType, clgChalleng
 		   and (eMonitoredChallengesType == Trigger.ChallengeTypes.Any or eMonitoredChallengesType == ktChallengeTypeToInternalEnum[clgChallenge:GetType() or -1])
 end
 
-function Trigger:__init() 
+function Trigger:__init(o) 
 	self.log:debug("__init()")
 	
-	local o = TriggerBase:__init()	
+	o = o or {}
+	TriggerBase:__init(o)	
 	o[kstrFieldNameChallengeType] = o[kstrFieldNameChallengeType] or Trigger.ChallengeTypes.Any	
 	
 	if o:GetAction() == nil then 
@@ -147,7 +148,9 @@ function Trigger:SetChallengeType(eChallengeType)
 	
 	self[kstrFieldNameChallengeType] = eChallengeType
 	
-	self:OnChallengeUpdate()
+	if self.OnChallengeUpdate then	-- HACK: defensive coding to allow calling setter from not fully initialized deserializer
+		self:OnChallengeUpdate()
+	end
 end
 
 
