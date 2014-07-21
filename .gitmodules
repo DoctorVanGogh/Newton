@@ -22,3 +22,6 @@
 [submodule "Newton/lib/LibError"]
 	path = Newton/lib/LibError
 	url = https://github.com/wildstarnasa/LibError.git
+[submodule "newton/lib/LibDialog"]
+	path = newton/lib/LibDialog
+	url = https://github.com/wildstarnasa/LibDialog.git

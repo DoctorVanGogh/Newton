@@ -361,7 +361,15 @@ function Newton:InitializeForm()
 	-- Sections
 	local wndGeneral = Configuration:CreateSection(wndContent, { strDescription = self.localization["Section:General"] })
 	local wndTriggers = Configuration:CreateSection(wndContent, { strDescription = self.localization["Section:Triggers"] })
-	local wndAdvanced = Configuration:CreateSectionCollapsible(wndContent, { strDescription = self.localization["Section:Advanced"] })
+	local wndAdvanced = Configuration:CreateSectionCollapsible(
+		wndContent, 
+		{ 
+			strDescription = self.localization["Section:Advanced"],
+			fnCallbackExpandCollapse = function() 
+				wndContent:ArrangeChildrenVert(0)
+			end
+		}
+	)
 	
 	-- Section: 'General'
 	local wndElementsContainer = wndGeneral:FindChild("ElementsContainer")
@@ -449,11 +457,12 @@ function Newton:InitializeForm()
 			end			
 		}
 	)
+	
 	Configuration:SizeSectionToContent(wndAdvanced)
 	Configuration:UpdateCollapsibleSectionHeight(wndAdvanced)
 	Configuration:ExpandSection(wndAdvanced, false)
 		
-	wndContent:ArrangeChildrenVert()
+	wndContent:ArrangeChildrenVert(0)
 		
 	GeminiLocale:TranslateWindow(self.localization, self.wndMain)				
 	

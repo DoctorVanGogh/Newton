@@ -71,6 +71,10 @@ function EventsHandler:SectionItemCheckChange( wndHandler, wndControl, eMouseBut
 	
 	if bChecked ~= bCurrentlyChecked then	
 		Configuration:ExpandSection(wndItem, bChecked)
+		local fnCallback = wndHandler:GetData()
+		if fnCallback then
+			fnCallback()
+		end
 	end
 end
 
@@ -122,8 +126,9 @@ function Configuration:CreateSection(wndParent, tOptions)
 end
 
 -- @params tOptions
---  strDescription  	Descriptive text
---  clrDescription  	Color to use for description
+--  strDescription  			Descriptive text
+--  clrDescription  			Color to use for description
+--  fnCallbackExpandCollapse	Callback to invoke on expand/collapse
 function Configuration:CreateSectionCollapsible(wndParent, tOptions)
 	if not self.ready then return end
 
@@ -136,7 +141,8 @@ function Configuration:CreateSectionCollapsible(wndParent, tOptions)
 	if tOptions.clrDescription then
 		wndDescription:SetTextColor(tOptions.clrDescription)
 	end	
-
+	wndDescription:SetData(tOptions.fnCallbackExpandCollapse)		
+	
 	Configuration:SizeSectionToContent(wndItem)
 	Configuration:UpdateCollapsibleSectionHeight(wndItem)	
 	
