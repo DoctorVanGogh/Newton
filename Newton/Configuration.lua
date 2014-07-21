@@ -272,9 +272,7 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	if not self.ready then return end
 				
 	tOptions = tOptions or {}
-	
-	glog:debug("%s", inspect(tOptions))
-	
+
 	local tEnum = tOptions.tEnum or {}
 	local tEnumNames = tOptions.tEnumNames or {}
 	local tEnumDescriptions = tOptions.tEnumDescriptions or {}

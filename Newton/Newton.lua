@@ -594,6 +594,7 @@ function Newton:RemoveElementSignal( wndHandler, wndControl, eMouseButton )
 end
 
 function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
+	self.log:debug("TriggerItemEnableSignal")
 	if wndControl ~= wndHandler then return end
 	
 	local tTrigger = wndHandler:GetParent():GetParent():GetData()
@@ -611,6 +612,7 @@ function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
 end
 
 function Newton:RemoveTrigger( wndHandler, wndControl, eMouseButton )
+	self.log:debug("RemoveTrigger")
 	if wndControl ~= wndHandler then return end
 	
 	local tTrigger = wndHandler:GetParent():GetParent():GetData()
@@ -622,6 +624,7 @@ function Newton:RemoveTrigger( wndHandler, wndControl, eMouseButton )
 end
 
 function Newton:TriggerForward( wndHandler, wndControl, eMouseButton )
+	self.log:debug("TriggerForward")
 	if wndControl ~= wndHandler then return end
 	
 	local tTrigger = wndHandler:GetParent():GetParent():GetData()
@@ -634,6 +637,7 @@ end
 
 
 function Newton:TriggerBackward( wndHandler, wndControl, eMouseButton )
+	self.log:debug("TriggerBackward")
 	if wndControl ~= wndHandler then return end
 	
 	local tTrigger = wndHandler:GetParent():GetParent():GetData()
