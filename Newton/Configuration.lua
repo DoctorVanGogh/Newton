@@ -270,8 +270,11 @@ end
 --  strHeader			popup header
 function Configuration:CreatePopup(wndParent, tOptions)
 	if not self.ready then return end
-		
+				
 	tOptions = tOptions or {}
+	
+	glog:debug("%s", inspect(tOptions))
+	
 	local tEnum = tOptions.tEnum or {}
 	local tEnumNames = tOptions.tEnumNames or {}
 	local tEnumDescriptions = tOptions.tEnumDescriptions or {}
@@ -282,7 +285,7 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	local wndPopup = Apollo.LoadForm(self.xmlDoc, "HoloEnumPopup",  wndParent, EventsHandler)
 	local wndContainer = wndPopup:FindChild("ElementList")
 		
-	wndPopup:FindChild("Header"):SetText(strHeader)	
+	wndPopup:FindChild("Header"):SetText(strHeader)		
 	
 	for idx, oElement in ipairs(tEnum) do
 		local strFormName

@@ -225,10 +225,11 @@ function Newton:UpdateTriggerUI()
 		local nCount = self.trigger:GetCount()
 		for tTrigger in self.trigger:GetEnumerator() do
 			idx = idx + 1 
-			local wndTrigger = Apollo.LoadForm(self.xmlDoc, "TriggerItem", wndElementsContainer, self)
-			local wndEnableBtn = wndTrigger:FindChild("EnableBtn")
+			local wndTrigger = Apollo.LoadForm(self.xmlDoc, "TriggerItem", wndElementsContainer, self)			
+			wndTrigger:SetData(tTrigger)	
+						
+			local wndEnableBtn = wndTrigger:FindChild("EnableBtn")			
 			wndEnableBtn:SetText(tTrigger:GetName())
-			wndEnableBtn:SetData(tTrigger)	
 			wndEnableBtn:SetCheck(tTrigger:IsEnabled())
 			
 			local strEnabled
@@ -241,12 +242,12 @@ function Newton:UpdateTriggerUI()
 			wndEnableBtn:SetTooltip(string.format(self.localization["Option:Trigger:Enabled"], strEnabled))
 			
 			local wndUp = wndTrigger:FindChild("UpBtn")
-			wndUp:Enable(false)			
+			wndUp:Enable(idx > 1)			
 			local wndDown = wndTrigger:FindChild("DownBtn")
-			wndDown:Enable(false)
+			wndDown:Enable(idx < nCount )
 			
 			local wndRemoveItemBtn = wndTrigger:FindChild("RemoveItemBtn")
-			wndRemoveItemBtn:Enable(false)
+			wndRemoveItemBtn:Enable(true)
 			
 			local wndSettingsContainer = wndTrigger:FindChild("SettingsContainer")
 			
@@ -403,6 +404,29 @@ function Newton:InitializeForm()
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
 	
+	local wndAddBtn = wndTriggersBlock:FindChild("AddTriggerBtn")
+			
+	local tOptions = {
+		tEnum = {},
+		tEnumNames = {},
+		tEnumDescriptions = {},	
+		fnValueSetter = function(tTriggerClass)			
+			if self.trigger:Add(tTriggerClass()) then
+				self:UpdateProfile()
+				self:UpdateTriggerUI()				
+			end
+		end
+	} 
+	for key, trigger in pairs(TriggerBase:GetRegisteredTriggers()) do
+		table.insert(tOptions.tEnum, trigger)
+		tOptions.tEnumNames[trigger] = trigger:GetName()		
+		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()
+	end
+	
+	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
+	wndAddBtn:AttachWindow(popup)			
+	
+	
 	wndTriggersBlock:ArrangeChildrenVert()
 	Configuration:SizeSectionToContent(wndTriggers)
 
@@ -444,31 +468,6 @@ function Newton:InitializeForm()
 	if knEnforceSummoningActionInverval > 0 then
 		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
 	end
-	
-	
-	local wndAddBtn = self.wndMain:FindChild("AddTriggerBtn")
-	
---	tEnum 				table of avaliable values
---  tEnumNames 	 		table of value names (tEnumNames[*Somevalue*] = "SomeValueName")
---  tEnumDesciptions	table of value descriptions (used as tooltip) (tEnumDesciptions[*SomeValue*] = "SomeTooltip")
---  fnValueSetter 		callback function to invoke on value selection
---  nMinWidth			minimum initial width for popup texts (currently unused)
---  strHeader			popup header	
-	
-	local tOptions = {
-		tEnum = {},
-		tEnumNames = {},
-		tEnumDescriptions = {},
-		strHeader = "Lorem Ipsum"
-	} 
-	for key, trigger in pairs(TriggerBase:GetRegisteredTriggers()) do
-		table.insert(tOptions.tEnum, trigger)
-		tOptions.tEnumNames[trigger] = trigger:GetName()		
-		tOptions.tEnumDescriptions[trigger] = trigger:GetDescription()
-	end
-	
-	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
-	wndAddBtn:AttachWindow(popup)		
 		
 end
 
@@ -597,7 +596,7 @@ end
 function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
 	if wndControl ~= wndHandler then return end
 	
-	local tTrigger = wndHandler:GetData()
+	local tTrigger = wndHandler:GetParent():GetParent():GetData()
 	
 	tTrigger:Enable(wndHandler:IsChecked())	
 	local strEnabled
@@ -609,6 +608,40 @@ function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
 	wndHandler:SetTooltip(string.format(self.localization["Option:Trigger:Enabled"], strEnabled))		
 	
 	self:UpdateProfile()
+end
+
+function Newton:RemoveTrigger( wndHandler, wndControl, eMouseButton )
+	if wndControl ~= wndHandler then return end
+	
+	local tTrigger = wndHandler:GetParent():GetParent():GetData()
+	
+	if self.trigger:Remove(tTrigger) then
+		self:UpdateProfile()
+		self:UpdateTriggerUI()		
+	end
+end
+
+function Newton:TriggerForward( wndHandler, wndControl, eMouseButton )
+	if wndControl ~= wndHandler then return end
+	
+	local tTrigger = wndHandler:GetParent():GetParent():GetData()
+	
+	if self.trigger:Forward(tTrigger) then
+		self:UpdateProfile()
+		self:UpdateTriggerUI()		
+	end
+end
+
+
+function Newton:TriggerBackward( wndHandler, wndControl, eMouseButton )
+	if wndControl ~= wndHandler then return end
+	
+	local tTrigger = wndHandler:GetParent():GetParent():GetData()
+	
+	if self.trigger:Backward(tTrigger) then
+		self:UpdateProfile()
+		self:UpdateTriggerUI()		
+	end
 end
 
 

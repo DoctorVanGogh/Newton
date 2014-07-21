@@ -49,8 +49,103 @@ function TriggerList:Add(tTrigger)
 			
 	table.insert(self.children, tTrigger)
 	if oo.instanceof(tTrigger, TriggerBase) then
-		tTrigger.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")		
+		tTrigger.RegisterCallback(self, ScanbotTrigger.Event_UpdateScanbotSummonStatus, "OnChildScanbotStatusUpdated")	
+		return true
 	end		
+end
+
+function TriggerList:Remove(tTrigger)
+	self.log:debug("Remove")
+
+	if tTrigger == nil then
+		error("Trigger must not be nil")
+	end
+	
+	if not oo.instanceof(tTrigger, TriggerBase) then
+		self.log:warn("Element must be Trigger")
+	end		
+	
+	local index
+	for idx, t in ipairs(self.children) do
+		if t == tTrigger then
+			index = idx
+			break
+		end
+	end	
+	
+	if index and table.remove(self.children, index) then
+		tTrigger:UnregisterAllCallbacks(self)
+		
+		return true
+	else
+		self.log:warn("Trigger to remove not in list")
+	end	
+end
+
+
+
+function TriggerList:Forward(tTrigger)
+	self.log:debug("Forward")
+
+	if tTrigger == nil then
+		error("Trigger must not be nil")
+	end
+	
+	if not oo.instanceof(tTrigger, TriggerBase) then
+		self.log:warn("Element must be Trigger")
+	end		
+
+	local index
+	for idx, t in ipairs(self.children) do
+		if t == tTrigger then
+			index = idx
+			break
+		end
+	end
+	
+	if index then
+		if index > 1 then
+			local tSwap = self.children[index - 1]
+			self.children[index - 1] = self.children[index]
+			self.children[index] = tSwap
+			
+			return true
+		end
+	else
+		self.log:warn("Trigger not in list")		
+	end
+end
+
+function TriggerList:Backward(tTrigger)
+	self.log:debug("Backward")
+
+	if tTrigger == nil then
+		error("Trigger must not be nil")
+	end
+	
+	if not oo.instanceof(tTrigger, TriggerBase) then
+		self.log:warn("Element must be Trigger")
+	end		
+
+	local index
+	for idx, t in ipairs(self.children) do
+		if t == tTrigger then
+			index = idx
+			break
+		end
+	end
+	
+	if index then
+		if index < #self.children then
+			local tSwap = self.children[index + 1]
+			self.children[index + 1] = self.children[index]
+			self.children[index] = tSwap
+			
+			return true
+		end
+	else
+		self.log:warn("Trigger not in list")		
+	end
 end
 
 function TriggerList:GetEnumerator()
