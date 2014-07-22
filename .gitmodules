@@ -25,3 +25,6 @@
 [submodule "newton/lib/LibDialog"]
 	path = newton/lib/LibDialog
 	url = https://github.com/wildstarnasa/LibDialog.git
+[submodule "Newton/lib/LibApolloFixes"]
+	path = Newton/lib/LibApolloFixes
+	url = https://github.com/wildstarnasa/LibApolloFixes.git

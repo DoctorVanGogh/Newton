@@ -4,6 +4,7 @@
 -----------------------------------------------------------------------------------------------
 
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:NewLocale("Newton", "enUS", true)
+L["Config"] = "Show Newton config"
 L["Section:General"] = "General"
 L["Section:Triggers"] = "Triggers"
 L["Section:Advanced"] = "Advanced"
@@ -15,7 +16,7 @@ L["Option:Profile:New"] = "New Profile"
 L["Option:Profile:New:Message"] = "Select a unique name for the new profile"
 L["Option:Profile:New:Label"] = "Profile name"
 L["Option:Profile:Delete"] = "Delete current profile"
-L["Option:Profile:Delete:Confirm"] = "Really delete profile '%s'?\nThis cannot be undone."
+L["Option:Profile:Delete:Confirm"] = "Really delete profile '%s'?\nThis *cannot* be undone."
 L["Option:Profile:Triggers"] = "Triggers"
 L["Option:Profile:Triggers:Explanation"] = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
 L["Option:Trigger:Enabled"] = "Enabled: %s"
@@ -29,9 +30,6 @@ L["Option:LogLevel:Configurable"] = "Log Level (Configurable)"
 L["Option:LogLevel:Setting"] = "Log Level (Setting)"
 L["Option:LogLevel:Configuration"] = "Log Level (Configuration UI Library)"
 L["Option:LogLevel:PopupHeader"] = "Levels"
-
-L["Player not a scientist - consider disabling Addon %s for this character!"] = true
-L["Not a scientist - configuration disabled!"] = true
 
 
 local M = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:NewLocale("Newton:Triggers", "enUS", true)
