@@ -175,10 +175,12 @@ end
 function Configuration:SizeSectionToContent(wndSection)
 	local wndContainer = wndSection:FindChild("ElementsContainer")
 	local nHeight = wndContainer:ArrangeChildrenVert(0)
+	self.log:debug("Calculated heeight for section content: %f", nHeight)
 	local nLeft, nTop, nRight, nBottom = wndContainer:GetAnchorOffsets()
 	nHeight = nHeight + math.abs(nTop) + math.abs(nBottom)
 	nLeft, nTop, nRight, nBottom = wndSection:GetAnchorOffsets()
-	wndSection:SetAnchorOffsets(nLeft, nTop, nRight, nHeight)
+	wndSection:SetAnchorOffsets(nLeft, 0, nRight, nHeight)
+	self.log:debug("Actual heeight for section content: %f", wndSection:GetHeight())	
 end
 
 

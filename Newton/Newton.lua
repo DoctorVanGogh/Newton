@@ -385,7 +385,7 @@ function Newton:InitializeForm()
 	)
 	Configuration:SizeSectionToContent(wndGeneral)
 
-	-- Section: 'Triggers'
+	-- Section: 'Triggers'		
 	wndElementsContainer = wndTriggers:FindChild("ElementsContainer")
 	local _, wndDropdown = Configuration:CreateSettingItemEnum(
 		wndElementsContainer,
@@ -404,6 +404,7 @@ function Newton:InitializeForm()
 	wndDropdown:Enable(true)
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
+	wndTriggersBlock:FindChild("Header"):SetTooltip(self.localization["Option:Profile:Triggers:Explanation"])
 	
 	local wndAddBtn = wndTriggersBlock:FindChild("AddTriggerBtn")
 	wndAddBtn:SetTooltip(self.localization["Option:Trigger:Add"])
@@ -428,7 +429,7 @@ function Newton:InitializeForm()
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
 	wndAddBtn:AttachWindow(popup)				
 	
-	wndTriggersBlock:ArrangeChildrenVert()
+	wndTriggersBlock:ArrangeChildrenVert(0)
 	Configuration:SizeSectionToContent(wndTriggers)
 
 	
@@ -579,20 +580,30 @@ function Newton:UpdateTriggerUI()
 			end				
 			-- size each trigger correctly
 			SizeTriggerToSettingsHeight(wndTrigger)												
+			
+			self.log:debug("Added Trigger - Height=%f", wndTrigger:GetHeight())
 		end
 
+				
 		-- size triggers list correctly
 		local nTriggersHeight = wndElementsContainer:ArrangeChildrenVert(0)
+		self.log:debug("Calculated total height for trigger list: %f", nTriggersHeight)
+		
 		local nLeft, nTop, nRight, nBottom = wndElementsContainer:GetAnchorOffsets()
 		wndElementsContainer:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nTriggersHeight)
+		self.log:debug("Actual height for trigger list: %f", wndElementsContainer:GetHeight())
 		
 		-- size entire triggers block correctly (incl. profile selection and explanation)
 		local nHeight = self.wndTriggers:ArrangeChildrenVert(0)
+		self.log:debug("Calculated height Triggers block: %f", nHeight)
+				
 		nLeft, nTop, nRight, nBottom = self.wndTriggers:GetAnchorOffsets()
 		self.wndTriggers:SetAnchorOffsets(nLeft, nTop, nRight, nTop + nHeight)
-
+		self.log:debug("Actual height for Triggers block: %f", self.wndTriggers:GetHeight())
+			
 		-- size containing 'triggers' section correctly
 		Configuration:SizeSectionToContent(self.wndTriggers:GetParent():GetParent())
+		self.log:debug("Actual height for Triggers Section: %f", self.wndTriggers:GetParent():GetParent():GetHeight())
 		
 		-- size entire config scroll area correctly
 		self.wndMain:FindChild("Content"):ArrangeChildrenVert(0)

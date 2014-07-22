@@ -18,7 +18,11 @@ L["Option:Profile:New:Label"] = "Profile name"
 L["Option:Profile:Delete"] = "Delete current profile"
 L["Option:Profile:Delete:Confirm"] = "Really delete profile '%s'?\nThis *cannot* be undone."
 L["Option:Profile:Triggers"] = "Triggers"
-L["Option:Profile:Triggers:Explanation"] = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+L["Option:Profile:Triggers:Explanation"] = [[Explanation on Triggers:
+
+Each Trigger performs one of three actions on a certain condition. It may automatically summon the bot, dismiss it, or simply leave it up to the user. This can be configured. Depending on the trigger it may have additional options.
+Triggers work in a top down manner, meaning that the topmost trigger always takes precendence and blocks any triggers further down from performing actions - arrange your triggers accordingly.
+]]
 L["Option:Trigger:Add"] = "Add Trigger"
 L["Option:Trigger:Enabled"] = "Enabled: %s"
 L["Option:Trigger:Remove"] = "Remove trigger"
