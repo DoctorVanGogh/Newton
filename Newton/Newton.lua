@@ -404,8 +404,6 @@ function Newton:InitializeForm()
 	wndDropdown:Enable(true)
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
-	wndTriggersBlock:FindChild("Header"):SetTooltip(self.localization["Option:Profile:Triggers:Explanation"])
-	
 	local wndAddBtn = wndTriggersBlock:FindChild("AddTriggerBtn")
 	wndAddBtn:SetTooltip(self.localization["Option:Trigger:Add"])
 			
