@@ -8,8 +8,7 @@ L["Section:General"] = "General"
 L["Section:Triggers"] = "Triggers"
 L["Section:Advanced"] = "Advanced"
 L["Option:Persist"] = "Remember Scanbot"
-L["Option:LogLevel"] = "Log Level"
-L["Option:LogLevel:PopupHeader"] = "Levels"
+
 L["Option:Profile"] = "Current Profile"
 L["Option:Profile:PopupHeader"] = "Profiles"
 L["Option:Profile:New"] = "New Profile"
@@ -23,7 +22,13 @@ L["Option:Trigger:Enabled"] = "Enabled: %s"
 L["Option:Trigger:Remove"] = "Remove trigger"
 L["Option:Trigger:Forward"] = "Move up"
 L["Option:Trigger:Backward"] = "Move down"
-
+L["Option:LogLevel:Newton"] = "Log Level (Newton)"
+L["Option:LogLevel:ScanbotTrigger"] = "Log Level (Scanbot Triggers)"
+L["Option:LogLevel:ScanbotManager"] = "Log Level (ScanbotManager)"
+L["Option:LogLevel:Configurable"] = "Log Level (Configurable)"
+L["Option:LogLevel:Setting"] = "Log Level (Setting)"
+L["Option:LogLevel:Configuration"] = "Log Level (Configuration UI Library)"
+L["Option:LogLevel:PopupHeader"] = "Levels"
 
 L["Player not a scientist - consider disabling Addon %s for this character!"] = true
 L["Not a scientist - configuration disabled!"] = true

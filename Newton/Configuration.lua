@@ -93,6 +93,7 @@ function Configuration:OnLoad()
 		pattern = "%d [%c:%n] %l - %m",
 		appender = "GeminiConsole"
 	})	
+	self.log = glog
 
 	self.xmlDoc = XmlDoc.CreateFromFile("Configuration.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)		

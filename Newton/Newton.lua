@@ -25,19 +25,13 @@ local knEnforceSummoningActionInverval = -1
 
 local NAME = "Newton"
 local MAJOR, MINOR = NAME.."-2.0", 2
-local glog
-local GeminiLocale
-local GeminiLogging
-local inspect
-local TriggerList
-local TriggerBase
+
+local GeminiLocale, GeminiLogging, LibDialog, inspect, glog
+
+local TriggerList, TriggerBase, ScanbotManager, ScanbotTrigger, Configuration, Setting, SettingEnum, Configurable, oo
+
 local SummoningChoice
-local ScanbotManager
-local ScanbotTrigger
-local Configuration
-local SettingEnum
-local LibDialog
-local oo 
+
 
 -----------------------------------------------------------------------------------------------
 -- Initialization
@@ -51,10 +45,12 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:DB-1.0",
 																	"Gemini:LibDialog-1.0",
 																	"DoctorVanGogh:Lib:Configuration",
+																	"DoctorVanGogh:Lib:Configurable",
 																	"DoctorVanGogh:Newton:ScanbotTrigger",
 																	"DoctorVanGogh:Newton:TriggerList",																																			
 																	"DoctorVanGogh:Newton:ScanbotManager",
 																	"DoctorVanGogh:Lib:Setting:Enum",
+																	"DoctorVanGogh:Lib:Setting",
 																	"DoctorVanGogh:Lib:Loop:Multiple"
 																}
 															)
@@ -62,11 +58,13 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 local dbDefaults = {
 	char = {
 		persistScanbot = true,
-		scanbotIndex = 0,
+		scanbotIndex = 1,
 		currentProfileName = "Default"
 	},
 	global = {
-		logLevel = "INFO"	
+		logLevels = {
+			['*'] = 'INFO'
+		}
 	},
 	profile = { 
 		triggerList = {
@@ -163,6 +161,7 @@ function Newton:OnInitialize()
 	self.xmlDoc = XmlDoc.CreateFromFile("NewtonForm.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)	
 	
+	-- store loads of package references
 	ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
 	
 	TriggerList = Apollo.GetPackage("DoctorVanGogh:Newton:TriggerList").tPackage
@@ -173,8 +172,10 @@ function Newton:OnInitialize()
 	SummoningChoice = TriggerBase.SummoningChoice
 	
 	Configuration = Apollo.GetPackage("DoctorVanGogh:Lib:Configuration").tPackage
+	Configurable = Apollo.GetPackage("DoctorVanGogh:Lib:Configurable").tPackage
 	
 	SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
+	Setting = Apollo.GetPackage("DoctorVanGogh:Lib:Setting").tPackage
 	
 	LibDialog = Apollo.GetPackage("Gemini:LibDialog-1.0").tPackage
 	
@@ -188,6 +189,7 @@ function Newton:OnInitialize()
 	self.db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")	
 	self.db.RegisterCallback(self, "OnProfileDeleted", "UpdateTriggerUI")
 	
+	-- Create dialog closures over addon instance
 	LibDialog:Register(
 		"remove",
 		{
@@ -249,8 +251,7 @@ function Newton:OnInitialize()
 			data.text = text
 		end	
 	end
-	
-	
+		
 	LibDialog:Register(
 		"create",
 		{
@@ -259,7 +260,8 @@ function Newton:OnInitialize()
 					text = Apollo.GetString("CRB_Ok"),
 					OnClick = function(settings, data, reason)
 						if data.text then
-							self.db:SetProfile(data.text)							
+							self.db:SetProfile(data.text)
+							self.wndProfilesDropdown:SetText(data.text)
 						end
 					end,
 				},
@@ -292,14 +294,18 @@ function Newton:OnEnable()
 	glog:debug("OnEnable")
 
 	self.ready = true	
+			
+	self.log:SetLevel(self.db.global.logLevels.Newton)	
+	ScanbotManager.log:SetLevel(self.db.global.logLevels.ScanbotManager)	
+	ScanbotTrigger.log:SetLevel(self.db.global.logLevels.ScanbotTrigger)	
+	Configuration.log:SetLevel(self.db.global.logLevels.Configuration)	
+	Setting.log:SetLevel(self.db.global.logLevels.Setting)	
+	Configurable.log:SetLevel(self.db.global.logLevels.Configurable)
 	
 	local triggerList = TriggerList()
 	self.trigger = triggerList
-	self.trigger.RegisterCallback(self, TriggerList.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")
-			
-	self:SetPersistScanbot(self.db.char.persistScanbot)
-	self.strLogLevel = self.db.global.logLevel
-	self.log:SetLevel(self.strLogLevel)
+	self.trigger.RegisterCallback(self, TriggerList.Event_UpdateScanbotSummonStatus, "OnScanbotStatusUpdated")				
+
 	self.scanbotManager = ScanbotManager(self.db.char.scanbotIndex)	
 	
 	self:UpdateTriggerList()
@@ -438,9 +444,11 @@ function Newton:UpdateProfile()
 end
 
 function Newton:DatabaseShutdown(db)
-	self.db.char.persistScanbot = self:GetPersistScanbot()
-	self.db.char.scanbotIndex = self.scanbotManager:GetScanbotIndex()
-	self.db.global.logLevel = self.strLogLevel
+	if self.db.char.persistScanbot then
+		self.db.char.scanbotIndex = self.scanbotManager:GetScanbotIndex()
+	else
+		self.db.char.scanbotIndex = dbDefaults.char.scanbotIndex
+	end	
 	self:UpdateProfile()
 end
 
@@ -478,7 +486,9 @@ function Newton:OnDocumentReady()
 	
 end
 
+-- builds the main config ui - most of this happens dynamically
 function Newton:InitializeForm()
+
 	local wndMain = Apollo.LoadForm(self.xmlDoc, "NewtonConfigForm", nil, self)	
 
 	self.wndMain = wndMain
@@ -507,10 +517,10 @@ function Newton:InitializeForm()
 		{
 			strDescription = self.localization["Option:Persist"],
 			fnValueGetter = function() 
-								return self:GetPersistScanbot() 
+								return self.db.char.persistScanbot 
 							end,
 			fnValueSetter = function(v) 
-								self:SetPersistScanbot(v)
+								self.db.char.persistScanbot = v
 							end
 		}
 	)
@@ -564,21 +574,30 @@ function Newton:InitializeForm()
 	
 	-- Section: 'Advanced'
 	wndElementsContainer = wndAdvanced:FindChild("ElementsContainer")
-	Configuration:CreateSettingItemEnum(
-		wndElementsContainer, 
-		{
-			tEnum = GeminiLogging.LEVEL,
-			strHeader = self.localization["Option:LogLevel:PopupHeader"],
-			strDescription = self.localization["Option:LogLevel"],
-			fnValueGetter = function() 
-				return self.strLogLevel
-			end,
-			fnValueSetter = function(value) 
-				self.strLogLevel = value
-				self.log:SetLevel(value)
-			end			
-		}
-	)
+	
+	local function CreateAdvancedEnumSetting(strDescriptionLocalizationKey, strKeyLogLevels, oLog)
+		Configuration:CreateSettingItemEnum(
+			wndElementsContainer, 
+			{
+				tEnum = GeminiLogging.LEVEL,
+				strHeader = self.localization["Option:LogLevel:PopupHeader"],
+				strDescription = self.localization[strDescriptionLocalizationKey],
+				fnValueGetter = function() 
+					return self.db.global.logLevels[strKeyLogLevels]
+				end,
+				fnValueSetter = function(value) 
+					self.db.global.logLevels[strKeyLogLevels] = value
+					oLog:SetLevel(value)
+				end			
+			}
+		)		
+	end
+	CreateAdvancedEnumSetting("Option:LogLevel:Newton", "Newton", self.log)
+	CreateAdvancedEnumSetting("Option:LogLevel:ScanbotManager", "ScanbotManager", ScanbotManager.log)	
+	CreateAdvancedEnumSetting("Option:LogLevel:ScanbotTrigger", "ScanbotTrigger", ScanbotTrigger.log)
+	CreateAdvancedEnumSetting("Option:LogLevel:Configurable", "Configurable", Configurable.log)			
+	CreateAdvancedEnumSetting("Option:LogLevel:Setting", "Setting", Setting.log)	
+	CreateAdvancedEnumSetting("Option:LogLevel:Configuration", "Configuration", Configuration.log)
 	
 	Configuration:SizeSectionToContent(wndAdvanced)
 	Configuration:UpdateCollapsibleSectionHeight(wndAdvanced)
@@ -609,27 +628,6 @@ end
 -----------------------------------------------------------------------------------------------
 -- Newton logic
 -----------------------------------------------------------------------------------------------
-
-
-function Newton:GetAutoSummonScanbot()
-	return self.bAutoSummonScanbot or false
-end
-
-function Newton:SetAutoSummonScanbot(bValue)
-	glog:debug(
-		"SetAutoSummonScanbot(%s) - isloaded=%s", 
-		tostring(bValue), 		
-		tostring(GameLib.IsCharacterLoaded())		
-	)
-
-	if self.bAutoSummonScanbot == bValue then
-		return
-	end	
-	
-	self.bAutoSummonScanbot = bValue
-
-end
-
 function Newton:OnEnforceSummoningActionCheck()
 	self:OnScanbotStatusUpdated()
 end
@@ -685,22 +683,6 @@ function Newton:OnNewtonUpdate()
 	self.eShouldSummonBot = nil
 	
 	Apollo.RemoveEventHandler("VarChange_FrameCount", self)	
-end
-
-
--- persistence logic
-function Newton:GetPersistScanbot()
-	return self.bPersistScanbot
-end
-
-function Newton:SetPersistScanbot(bValue)
-	glog:debug("SetPersistScanbot(%s)", tostring(bValue))
-
-	if bValue == self:GetPersistScanbot() then
-		return
-	end
-	
-	self.bPersistScanbot = bValue
 end
 
 
