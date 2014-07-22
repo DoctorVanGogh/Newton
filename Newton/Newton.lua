@@ -36,6 +36,7 @@ local ScanbotManager
 local ScanbotTrigger
 local Configuration
 local SettingEnum
+local LibDialog
 local oo 
 
 -----------------------------------------------------------------------------------------------
@@ -48,6 +49,7 @@ local Newton = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon(
 																	"Gemini:Logging-1.2",
 																	"Gemini:Locale-1.0",	
 																	"Gemini:DB-1.0",
+																	"Gemini:LibDialog-1.0",
 																	"DoctorVanGogh:Lib:Configuration",
 																	"DoctorVanGogh:Newton:ScanbotTrigger",
 																	"DoctorVanGogh:Newton:TriggerList",																																			
@@ -123,7 +125,6 @@ local dbDefaults = {
 	}
 }
 	
-	
 local function SizeTriggerToSettingsHeight(wndTrigger)
 	local wndContainer = wndTrigger:FindChild("SettingsContainer")
 	local nHeight = wndContainer:ArrangeChildrenVert(0)
@@ -175,19 +176,122 @@ function Newton:OnInitialize()
 	
 	SettingEnum = Apollo.GetPackage("DoctorVanGogh:Lib:Setting:Enum").tPackage
 	
+	LibDialog = Apollo.GetPackage("Gemini:LibDialog-1.0").tPackage
+	
 	oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 	
 	self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, dbDefaults, true)
 	self.db.RegisterCallback(self, "OnDatabaseShutdown", "DatabaseShutdown")
-	self.db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")	
+	
+	self.db.RegisterCallback(self, "OnProfileChanged", "OnProfileChanged")
+	self.db.RegisterCallback(self, "OnProfileCopied", "OnProfileChanged")
+	self.db.RegisterCallback(self, "OnProfileReset", "OnProfileChanged")	
+	self.db.RegisterCallback(self, "OnProfileDeleted", "UpdateTriggerUI")
+	
+	LibDialog:Register(
+		"remove",
+		{
+			buttons = {
+			  {
+				text = Apollo.GetString("CRB_Yes"),
+				OnClick = function(settings, data, reason)
+					local index
+					local tProfiles = self.db:GetProfiles()
+					local strNewActiveProfile
+					if data == tProfiles[1] then
+						-- if we remove the 1st one, make 2nd active
+						strNewActiveProfile = tProfiles[2]
+					else
+						-- if we remove anything but 1st, just make 1st active
+						strNewActiveProfile = tProfiles[1]					
+					end
+					self.db:SetProfile(strNewActiveProfile)											
+					self.db:DeleteProfile(data)
+					self.wndProfilesDropdown:SetText(strNewActiveProfile)					
+				end,
+			  },
+			  {
+				color = "Red",
+				text = Apollo.GetString("CRB_No"),
+				OnClick = function(settings, data, reason)
+					-- DO NOTHING
+				end,
+			  },
+			},
+			OnShow = function(settings, data)
+				settings:SetText(string.format(self.localization["Option:Profile:Delete:Confirm"], data))			
+			end,			
+			showWhileDead=true,
+		}
+	)	
+
+	local fnValidateDialogText = function(settings, data, text)
+		-- simple function to validate profile names (unique and non null)
+		local index			
+		
+		if not text or text == "" then
+			index = -1
+		end						
+		for idx, strProfile in ipairs(data.profiles or {}) do
+			if strProfile == text then
+				index = idx
+				break
+			end
+		end
+		
+		local wndOkButton = settings.wndDialog:FindChild("ButtonContainer"):GetChildren()[1]
+		
+		if index then
+			wndOkButton:Enable(false)
+			data.text = nil
+		else
+			wndOkButton:Enable(true)							
+			data.text = text
+		end	
+	end
+	
+	
+	LibDialog:Register(
+		"create",
+		{
+			buttons = {
+				{
+					text = Apollo.GetString("CRB_Ok"),
+					OnClick = function(settings, data, reason)
+						if data.text then
+							self.db:SetProfile(data.text)							
+						end
+					end,
+				},
+				{
+					color = "Red",
+					text = Apollo.GetString("CRB_Cancel"),
+					OnClick = function(settings, data, reason)
+						-- do nothing
+					end,
+				},
+			},
+			editboxes = {
+				{
+					label=self.localization["Option:Profile:New:Label"],
+					order = 10,
+					OnTextChanged = fnValidateDialogText,	
+				},
+			},		
+			OnShow = fnValidateDialogText,			
+			text=self.localization["Option:Profile:New:Message"],
+			hideOnEscape = true,
+			showWhileDead = true,		  
+		}
+	)
+	
 end
 
 -- Called when player has loaded and entered the world
 function Newton:OnEnable()
 	glog:debug("OnEnable")
 
-	self.ready = true
-	
+	self.ready = true	
 	
 	local triggerList = TriggerList()
 	self.trigger = triggerList
@@ -216,8 +320,33 @@ function Newton:UpdateTriggerList(bSkipWindowUpdate)
 	self.trigger:Deserialize(self.db.profile.triggerList)
 end
 
+local function CreateProfileSelectionOptions(self)
+	return {
+		tEnum = self.db:GetProfiles(),
+		strHeader = self.localization["Option:Profile:PopupHeader"],
+		strDescription = self.localization["Option:Profile"],
+		fnValueGetter = function() return self.db.char.currentProfileName end,
+		fnValueSetter = function(value) 
+			self.db:SetProfile(value) 				
+			self.db.char.currentProfileName = value		
+			self.wndProfilesDropdown:SetText(value)
+		end
+	}
+end
+
+
 function Newton:UpdateTriggerUI()
 	if self.wndTriggers and self.trigger then
+	
+		-- update profiles dropdown
+		self.wndProfilesDropdown:DestroyChildren()
+		local wndPopup = Configuration:CreatePopup(self.wndProfilesDropdown, CreateProfileSelectionOptions(self))
+		self.wndProfilesDropdown:AttachWindow(wndPopup)		
+		
+		local wndRemoveElement = self.wndMain:FindChild("RemoveElementButton")
+		wndRemoveElement:Enable(#self.db:GetProfiles() > 1)	
+	
+		-- update triggers list
 		local wndElementsContainer = self.wndTriggers:FindChild("ElementsContainer")
 		wndElementsContainer:DestroyChildren()
 		
@@ -391,24 +520,17 @@ function Newton:InitializeForm()
 	wndElementsContainer = wndTriggers:FindChild("ElementsContainer")
 	local _, wndDropdown = Configuration:CreateSettingItemEnum(
 		wndElementsContainer,
-		{
-			tEnum = { 
-				self.db:GetProfiles()
-			},
-			strHeader = self.localization["Option:Profile:PopupHeader"],
-			strDescription = self.localization["Option:Profile"],
-			fnValueGetter = function() return self.db.char.currentProfileName end
-			--fnValueSetter = ...
-		}
+		CreateProfileSelectionOptions(self)
 	)
+	self.wndProfilesDropdown = wndDropdown
 	-- add/remove button to dropdown
 	local nLeft, nTop, nRight, nBottom = wndDropdown:GetAnchorOffsets()
 	local wndAddElement = Apollo.LoadForm(self.xmlDoc, "AddElementButton", wndDropdown:GetParent(), self)
 	local wndRemoveElement = Apollo.LoadForm(self.xmlDoc, "RemoveElementButton", wndDropdown:GetParent(), self)
 	wndDropdown:SetAnchorOffsets(nLeft + wndAddElement:GetWidth(), nTop, nRight - wndRemoveElement:GetWidth(), nBottom)
-	wndAddElement:Enable(false)
-	wndRemoveElement:Enable(false)
-	wndDropdown:Enable(false)
+	wndAddElement:Enable(true)
+	wndRemoveElement:Enable(#self.db:GetProfiles() > 1)
+	wndDropdown:Enable(true)
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
 	
@@ -597,9 +719,17 @@ end
 
 
 function Newton:AddElementSignal( wndHandler, wndControl, eMouseButton )
+	self.log:debug("AddElementSignal")
+	if wndControl ~= wndHandler then return end
+	
+	LibDialog:Spawn("create", { profiles = self.db:GetProfiles() })	
 end
 
 function Newton:RemoveElementSignal( wndHandler, wndControl, eMouseButton )
+	self.log:debug("RemoveElementSignal")
+	if wndControl ~= wndHandler then return end
+	
+	LibDialog:Spawn("remove", self.db:GetCurrentProfile())
 end
 
 function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )

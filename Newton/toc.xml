@@ -8,6 +8,7 @@
     <Script Name="lib/LibError/LibError-1.0.lua"/>
     <Script Name="lib/CallbackHandler/CallbackHandler-1.0.lua"/>
     <Script Name="lib/GeminiDB/GeminiDB-1.0.lua"/>
+	<Script Name="Lib/LibDialog/LibDialog-1.0.lua" />	
     <Script Name="lib/Loop/base.lua"/>
     <Script Name="lib/Loop/table.lua"/>
     <Script Name="lib/Loop/collection/ObjectCache.lua"/>
