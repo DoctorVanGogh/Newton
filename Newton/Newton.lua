@@ -398,12 +398,15 @@ function Newton:InitializeForm()
 	local wndRemoveElement = Apollo.LoadForm(self.xmlDoc, "RemoveElementButton", wndDropdown:GetParent(), self)
 	wndDropdown:SetAnchorOffsets(nLeft + wndAddElement:GetWidth(), nTop, nRight - wndRemoveElement:GetWidth(), nBottom)
 	wndAddElement:Enable(true)
+	wndAddElement:SetTooltip(self.localization["Option:Profile:New"])
 	wndRemoveElement:Enable(#self.db:GetProfiles() > 1)
+	wndRemoveElement:SetTooltip(self.localization["Option:Profile:Delete"])
 	wndDropdown:Enable(true)
 	
 	local wndTriggersBlock = Apollo.LoadForm(self.xmlDoc, "TriggersBlock", wndElementsContainer, self)
 	
 	local wndAddBtn = wndTriggersBlock:FindChild("AddTriggerBtn")
+	wndAddBtn:SetTooltip(self.localization["Option:Trigger:Add"])
 			
 	local tOptions = {
 		tEnum = {},
@@ -423,8 +426,7 @@ function Newton:InitializeForm()
 	end
 	
 	local popup = Configuration:CreatePopup(wndAddBtn, tOptions)
-	wndAddBtn:AttachWindow(popup)			
-	
+	wndAddBtn:AttachWindow(popup)				
 	
 	wndTriggersBlock:ArrangeChildrenVert()
 	Configuration:SizeSectionToContent(wndTriggers)
@@ -531,12 +533,15 @@ function Newton:UpdateTriggerUI()
 			
 			local wndUp = wndTrigger:FindChild("UpBtn")
 			wndUp:Enable(idx > 1)			
+			wndUp:SetTooltip(self.localization["Option:Trigger:Forward"])
 			local wndDown = wndTrigger:FindChild("DownBtn")
 			wndDown:Enable(idx < nCount )
+			wndDown:SetTooltip(self.localization["Option:Trigger:Backward"])
 			
 			local wndRemoveItemBtn = wndTrigger:FindChild("RemoveItemBtn")
 			wndRemoveItemBtn:Enable(true)
-			
+			wndRemoveItemBtn:SetTooltip(self.localization["Option:Trigger:Remove"])
+						
 			local wndSettingsContainer = wndTrigger:FindChild("SettingsContainer")
 			
 			-- add ui per setting
@@ -602,6 +607,7 @@ function Newton:SetupScanbotCustomizeAdditions()
 	-- inject 'cogs' icon into scanbot customization
 	if PathScientistCustomize and PathScientistCustomize.wndMain then
 		local wndOpenConfig = Apollo.LoadForm(self.xmlDoc, "SciConfigureBtn", PathScientistCustomize.wndMain, self)
+		wndOpenConfig:SetTooltip(self.localization["Config"])
 		GeminiLocale:TranslateWindow(self.localization, wndOpenConfig)					
 	end
 end
