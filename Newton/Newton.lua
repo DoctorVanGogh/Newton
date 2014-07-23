@@ -71,7 +71,7 @@ local dbDefaults = {
 		}
 	},
 	profile = { 
-		triggerList = {
+		triggerList = {			
 			{
 				key = "DoctorVanGogh:Newton:Triggers:Stealth",
 				values = {

@@ -83,7 +83,7 @@ function ScanbotManager:OnLoad()
 	-- import GeminiLogging
 	local GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
-		level = GeminiLogging.DEBUG,
+		level = GeminiLogging.INFO,
 		pattern = "%d [%c:%n] %l - %m",
 		appender = "GeminiConsole"
 	})	
