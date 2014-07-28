@@ -336,14 +336,63 @@ local function CreateProfileSelectionOptions(self)
 		tEnum = self.db:GetProfiles(),
 		strHeader = self.localization["Option:Profile:PopupHeader"],
 		strDescription = self.localization["Option:Profile"],
-		fnValueGetter = function() return self.db.char.currentProfileName end,
-		fnValueSetter = function(value) 
-			self.db:SetProfile(value) 				
-			self.db.char.currentProfileName = value		
-			self.wndProfilesDropdown:SetText(value)
-		end
+		fnValueGetter = Configuration:ToCallback(self, "GetCurrentProfileName"),
+		fnValueSetter = Configuration:ToCallback(self, "SetCurrentProfileName")
 	}
 end
+
+function Newton:ArrangeConfigContent()
+	if not self.wndMain then return end
+
+	local wndContent = self.wndMain:FindChild("Content")
+	if wndContent then
+		wndContent:ArrangeChildrenVert(0)
+	end
+end
+
+function Newton:GetPersistScanbot()
+	return self.db.char.persistScanbot
+end
+
+function Newton:SetPersistScanbot(value)
+	self.db.char.persistScanbot = value
+end
+
+function Newton:GetCurrentProfileName()
+	return self.db.char.currentProfileName
+end
+
+function Newton:SetCurrentProfileName(value)
+	self.db:SetProfile(value) 				
+	self.db.char.currentProfileName = value		
+	self.wndProfilesDropdown:SetText(value)
+end
+
+function Newton:AddTrigger(tTriggerClass)
+	if tTriggerClass and self.trigger:Add(tTriggerClass()) then
+		self:UpdateProfile()
+		self:UpdateTriggerUI()				
+	end
+end
+
+function Newton:GetLogLevel(strKeyLogLevel)
+	return self.db.global.logLevels[strKeyLogLevel]
+end
+
+function Newton:SetLogLevel(strKeyLogLevel, oLog, value)
+	self.log:debug("SetLogLevel(%s, %s)", tostring(strKeyLogLevel), tostring(value))
+	self.db.global.logLevels[strKeyLogLevel] = value
+	if oLog and oLog.SetLevel then
+		oLog:SetLevel(value)
+	end
+end
+
+function Newton:SetTriggerSettingValue(tSetting, value)
+	local result = tSetting:SetValue(value) 
+	self:UpdateProfile()
+	return result	
+end
+
 
 -- builds the main config ui - most of this happens dynamically
 function Newton:InitializeForm()
@@ -363,9 +412,7 @@ function Newton:InitializeForm()
 		wndContent, 
 		{ 
 			strDescription = self.localization["Section:Advanced"],
-			fnCallbackExpandCollapse = function() 
-				wndContent:ArrangeChildrenVert(0)
-			end
+			fnCallbackExpandCollapse = Configuration:ToCallback(self, "ArrangeConfigContent")
 		}
 	)
 	
@@ -375,16 +422,13 @@ function Newton:InitializeForm()
 		wndElementsContainer, 
 		{
 			strDescription = self.localization["Option:Persist"],
-			fnValueGetter = function() 
-								return self.db.char.persistScanbot 
-							end,
-			fnValueSetter = function(v) 
-								self.db.char.persistScanbot = v
-							end
+			fnValueGetter = Configuration:ToCallback(self, "GetPersistScanbot"),
+			fnValueSetter = Configuration:ToCallback(self, "SetPersistScanbot")
 		}
 	)
 	Configuration:SizeSectionToContent(wndGeneral)
-
+	
+	
 	-- Section: 'Triggers'		
 	wndElementsContainer = wndTriggers:FindChild("ElementsContainer")
 	local _, wndDropdown = Configuration:CreateSettingItemEnum(
@@ -411,12 +455,7 @@ function Newton:InitializeForm()
 		tEnum = {},
 		tEnumNames = {},
 		tEnumDescriptions = {},	
-		fnValueSetter = function(tTriggerClass)			
-			if self.trigger:Add(tTriggerClass()) then
-				self:UpdateProfile()
-				self:UpdateTriggerUI()				
-			end
-		end
+		fnValueSetter = Configuration:ToCallback(self, "AddTrigger")
 	} 
 	for key, trigger in pairs(TriggerBase:GetRegisteredTriggers()) do
 		table.insert(tOptions.tEnum, trigger)
@@ -429,9 +468,7 @@ function Newton:InitializeForm()
 	
 	wndTriggersBlock:ArrangeChildrenVert(0)
 	Configuration:SizeSectionToContent(wndTriggers)
-
-	
-	
+			
 	-- Section: 'Advanced'
 	wndElementsContainer = wndAdvanced:FindChild("ElementsContainer")
 	
@@ -442,13 +479,8 @@ function Newton:InitializeForm()
 				tEnum = GeminiLogging.LEVEL,
 				strHeader = self.localization["Option:LogLevel:PopupHeader"],
 				strDescription = self.localization[strDescriptionLocalizationKey],
-				fnValueGetter = function() 
-					return self.db.global.logLevels[strKeyLogLevels]
-				end,
-				fnValueSetter = function(value) 
-					self.db.global.logLevels[strKeyLogLevels] = value
-					oLog:SetLevel(value)
-				end			
+				fnValueGetter = Configuration:ToCallback(self, "GetLogLevel", strKeyLogLevels),				
+				fnValueSetter = Configuration:ToCallback(self, "SetLogLevel", strKeyLogLevels, oLog)
 			}
 		)		
 	end
@@ -478,7 +510,7 @@ function Newton:InitializeForm()
 	if knEnforceSummoningActionInverval > 0 then
 		self.tSummoningEnforcementTimer = ApolloTimer.Create(knEnforceSummoningActionInverval, true, "OnEnforceSummoningActionCheck", self)
 	end
-		
+	
 end
 
 function Newton:OnDocumentReady()
@@ -495,6 +527,7 @@ function Newton:OnDocumentReady()
 end
 
 function Newton:UpdateTriggerUI()
+
 	if self.wndTriggers and self.trigger then
 	
 		-- update profiles dropdown
@@ -508,14 +541,14 @@ function Newton:UpdateTriggerUI()
 		-- update triggers list
 		local wndElementsContainer = self.wndTriggers:FindChild("ElementsContainer")
 		wndElementsContainer:DestroyChildren()
-		
+	
 		local idx = 0
 		local nCount = self.trigger:GetCount()
 		for tTrigger in self.trigger:GetEnumerator() do
 			-- enumerate all triggers
 			idx = idx + 1 
 			local wndTrigger = Apollo.LoadForm(self.xmlDoc, "TriggerItem", wndElementsContainer, self)			
-			wndTrigger:SetData(tTrigger)	
+			wndTrigger:SetData(idx)	
 						
 			local wndEnableBtn = wndTrigger:FindChild("EnableBtn")			
 			wndEnableBtn:SetText(tTrigger:GetName())
@@ -542,7 +575,7 @@ function Newton:UpdateTriggerUI()
 			wndRemoveItemBtn:SetTooltip(self.localization["Option:Trigger:Remove"])
 						
 			local wndSettingsContainer = wndTrigger:FindChild("SettingsContainer")
-			
+					
 			-- add ui per setting
 			for tSetting in tTrigger:GetSettingsEnumerator() do
 				local wndSetting
@@ -562,12 +595,8 @@ function Newton:UpdateTriggerUI()
 						tEnumNames = tSetting:GetNames(),						
 						strDescription = tSetting:GetDescription(),
 						clrDescription = clrSetting,
-						fnValueGetter = function() return tSetting:GetValue() end,
-						fnValueSetter = function(value) 
-							local result = tSetting:SetValue(value) 
-							self:UpdateProfile()
-							return result								
-						end							
+						fnValueGetter = Configuration:ToCallback(tSetting, "GetValue"),
+						fnValueSetter = Configuration:ToCallback(self, "SetTriggerSettingValue", tSetting)	-- can't use plain setter here, we also need to update ui		
 					}
 					
 					wndSetting = Configuration:CreateSettingItemEnum(
@@ -575,7 +604,8 @@ function Newton:UpdateTriggerUI()
 						tOptions
 					)
 				end				
-			end				
+			end					
+				
 			-- size each trigger correctly
 			SizeTriggerToSettingsHeight(wndTrigger)												
 			
@@ -606,6 +636,7 @@ function Newton:UpdateTriggerUI()
 		-- size entire config scroll area correctly
 		self.wndMain:FindChild("Content"):ArrangeChildrenVert(0)
 	end
+
 end
 
 function Newton:OnWindowManagementReady()
@@ -775,8 +806,9 @@ function Newton:TriggerItemEnableSignal(wndHandler, wndControl, eMouseButton )
 	self.log:debug("TriggerItemEnableSignal")
 	if wndControl ~= wndHandler then return end
 	
-	local tTrigger = wndHandler:GetParent():GetParent():GetData()
-	
+	local idx = wndHandler:GetParent():GetParent():GetData()
+	local tTrigger = self.trigger:Get(idx)
+
 	tTrigger:Enable(wndHandler:IsChecked())	
 	local strEnabled
 	if wndHandler:IsChecked() then
@@ -793,8 +825,9 @@ function Newton:RemoveTrigger( wndHandler, wndControl, eMouseButton )
 	self.log:debug("RemoveTrigger")
 	if wndControl ~= wndHandler then return end
 	
-	local tTrigger = wndHandler:GetParent():GetParent():GetData()
-	
+	local idx = wndHandler:GetParent():GetParent():GetData()
+	local tTrigger = self.trigger:Get(idx)
+
 	if self.trigger:Remove(tTrigger) then
 		self:UpdateProfile()
 		self:UpdateTriggerUI()		
@@ -805,7 +838,8 @@ function Newton:TriggerForward( wndHandler, wndControl, eMouseButton )
 	self.log:debug("TriggerForward")
 	if wndControl ~= wndHandler then return end
 	
-	local tTrigger = wndHandler:GetParent():GetParent():GetData()
+	local idx = wndHandler:GetParent():GetParent():GetData()
+	local tTrigger = self.trigger:Get(idx)
 	
 	if self.trigger:Forward(tTrigger) then
 		self:UpdateProfile()
@@ -818,8 +852,9 @@ function Newton:TriggerBackward( wndHandler, wndControl, eMouseButton )
 	self.log:debug("TriggerBackward")
 	if wndControl ~= wndHandler then return end
 	
-	local tTrigger = wndHandler:GetParent():GetParent():GetData()
-	
+	local idx = wndHandler:GetParent():GetParent():GetData()
+	local tTrigger = self.trigger:Get(idx)
+
 	if self.trigger:Backward(tTrigger) then
 		self:UpdateProfile()
 		self:UpdateTriggerUI()		
@@ -832,6 +867,5 @@ function Newton:OnOpenConfigureNewton(wndHandler, wndControl, eMouseButton )
 	
 	self:OnConfigure()
 end
-
 
 

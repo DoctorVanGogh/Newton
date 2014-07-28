@@ -82,6 +82,10 @@ function TriggerList:Remove(tTrigger)
 	end	
 end
 
+function TriggerList:Get(index)
+	return self.children[index]
+end
+
 
 
 function TriggerList:Forward(tTrigger)

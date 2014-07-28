@@ -19,8 +19,436 @@ local Configuration = APkg and APkg.tPackage or {}
 local GeminiLogging
 local glog
 
-local EventsHandler = {}
+-- GeminiGUI Window definitions
+local tHoloDropdownSmallDef = {
+	AnchorOffsets = { 0, -12, 0, 12 },
+	AnchorPoints = { 0, 0.5, 1, 0.5 },
+	Class = "Button", 
+	Base = "CRB_Basekit:kitBtn_Dropdown_TextBaseHolo", 
+	Font = "DefaultButton", 
+	ButtonType = "Check", 
+	DT_VCENTER = true, 
+	DT_CENTER = true, 
+	BGColor = "UI_BtnBGDefault", 
+	TextColor = "UI_BtnTextDefault", 
+	NormalTextColor = "UI_BtnTextHoloNormal", 
+	PressedTextColor = "UI_BtnTextHoloPressed", 
+	FlybyTextColor = "UI_BtnTextHoloFlyby", 
+	PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+	DisabledTextColor = "UI_BtnTextHoloDisabled", 
+	Name = "HoloDropdownSmall", 
+	WindowSoundTemplate = "HoloDropdownToggle", 
+}
+local tHoloEnumPopupDef = {
+	AnchorOffsets = { 0, 0, 200, 200 },
+	AnchorPoints = "TOPRIGHT",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "HoloEnumPopup", 
+	Picture = true, 
+	SwallowMouseClicks = true, 
+	Overlapped = true, 
+	NoClip = true, 
+	CloseOnExternalClick = true, 
+	Visible = false, 
+	Events = {
+		WindowShow = "ShowPopup",
+	},
+	Children = {
+		{
+			AnchorOffsets = { 0, 22, 0, -163 },
+			AnchorPoints = "FILL",
+			RelativeToClient = true, 
+			Font = "CRB_InterfaceSmall", 
+			Text = "[Header]", 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTitleYellow", 
+			Name = "Header", 
+			DT_CENTER = true, 
+		},
+		{
+			AnchorOffsets = { -20, -23, 20, 22 },
+			AnchorPoints = "FILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "HoloFrame", 
+			Sprite = "BK3:sprHolo_Alert_Flyout", 
+			Picture = true, 
+			IgnoreMouse = true, 
+			NoClip = true, 
+		},
+		{
+			AnchorOffsets = { -33, 22, -10, 42 },
+			AnchorPoints = "TOPRIGHT",
+			Class = "Button", 
+			Base = "CRB_Basekit:kitBtn_Holo_Close2", 
+			Font = "DefaultButton", 
+			ButtonType = "PushButton", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextDefault", 
+			NormalTextColor = "UI_BtnTextDefault", 
+			PressedTextColor = "UI_BtnTextDefault", 
+			FlybyTextColor = "UI_BtnTextDefault", 
+			PressedFlybyTextColor = "UI_BtnTextDefault", 
+			DisabledTextColor = "UI_BtnTextDefault", 
+			Name = "CloseBtn", 
+			Template = "HoloWindowSound", 
+			Events = {
+				ButtonSignal = "OnClosePopup",
+			},
+		},
+		{
+			AnchorOffsets = { 20, 44, -20, -23 },
+			AnchorPoints = "FILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "ElementList", 
+			IgnoreMouse = true, 
+			Overlapped = true, 
+		},
+	},
+}
 
+local tSectionItemDef = {
+	AnchorOffsets = { 0, 0, 0, 106 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "SectionItem", 
+	Border = true, 
+	Picture = true, 
+	SwallowMouseClicks = true, 
+	Escapable = true, 
+	Overlapped = true, 
+	Sprite = "BK3:UI_BK3_Holo_InsetHeaderThin", 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 35 },
+			AnchorPoints = "HFILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "Header", 
+			Children = {
+				{
+					AnchorOffsets = { 6, 4, -4, -4 },
+					AnchorPoints = "FILL",
+					RelativeToClient = true, 
+					Font = "CRB_HeaderMedium", 
+					Text = "[Title]", 
+					BGColor = "UI_WindowBGDefault", 
+					TextColor = "UI_WindowTitleYellow", 
+					Name = "Title", 
+					DT_VCENTER = true, 
+				},
+			},
+		},
+		{
+			AnchorOffsets = { 2, 37, -2, -4 },
+			AnchorPoints = "FILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "ElementsContainer", 
+		},
+	},
+}
+local tSectionItemCollapsibleDef = {
+	AnchorOffsets = { 0, 0, 0, 106 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "SectionItemCollapsible", 
+	Border = true, 
+	Picture = true, 
+	SwallowMouseClicks = true, 
+	Escapable = true, 
+	Overlapped = true, 
+	Sprite = "BK3:UI_BK3_Holo_InsetHeaderThin", 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 35 },
+			AnchorPoints = "HFILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "Header", 
+			Children = {
+				{
+					AnchorOffsets = { 6, 4, -4, -4 },
+					AnchorPoints = "FILL",
+					Class = "Button", 
+					Base = "BK3:btnHolo_ExpandCollapseSmall", 
+					Font = "CRB_HeaderMedium", 
+					ButtonType = "Check", 
+					DT_VCENTER = true, 
+					BGColor = "UI_BtnBGDefault", 
+					TextColor = "UI_WindowTitleYellow", 
+					NormalTextColor = "UI_BtnTextDefault", 
+					PressedTextColor = "UI_BtnTextDefault", 
+					FlybyTextColor = "UI_BtnTextDefault", 
+					PressedFlybyTextColor = "UI_BtnTextDefault", 
+					DisabledTextColor = "UI_BtnTextDefault", 
+					Name = "EnableBtn", 
+					DrawAsCheckbox = true, 
+					UseWindowTextColor = true, 
+					Text = "[Title]", 
+					WindowSoundTemplate = "HoloDropdownToggle", 
+					TooltipFont = "CRB_InterfaceSmall", 
+					CheckboxRight = true, 
+					Events = {
+						ButtonCheck = "SectionItemCheckChange",
+						ButtonUncheck = "SectionItemCheckChange",
+					},
+				},
+			},
+		},
+		{
+			AnchorOffsets = { 2, 37, -2, -2 },
+			AnchorPoints = "FILL",
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "ElementsContainer", 
+		},
+	},
+}
+
+local tSettingItemBooleanDef = {
+	AnchorOffsets = { 0, 0, 0, 35 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	Font = "CRB_InterfaceMedium", 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_TextHoloBody", 
+	Name = "SettingItemBoolean", 
+	DT_WORDBREAK = true, 
+	Children = {
+		{
+			AnchorOffsets = { 6, 2, 343, -2 },
+			AnchorPoints = { 0, 0, 0.67, 1 },
+			RelativeToClient = true, 
+			Font = "CRB_InterfaceMedium_BO", 
+			Text = "[Description]", 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_TextHoloTitle", 
+			Name = "Description", 
+			DT_VCENTER = true, 
+		},
+		{
+			AnchorOffsets = { -29, 3, 0, 0 },
+			AnchorPoints = "VFILLRIGHT",
+			Class = "Button", 
+			Base = "BK3:btnHolo_Check", 
+			Font = "CRB_Button", 
+			ButtonType = "Check", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextDefault", 
+			NormalTextColor = "UI_BtnTextHoloNormal", 
+			PressedTextColor = "UI_BtnTextHoloPressed", 
+			FlybyTextColor = "UI_BtnTextHoloFlyby", 
+			PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+			DisabledTextColor = "UI_BtnTextHoloDisabled", 
+			Name = "Check", 
+			CheckboxRight = true, 
+			DrawAsCheckbox = false, 
+			WindowSoundTemplate = "HoloButtonSmall", 
+			Events = {
+				ButtonCheck = "SettingCheckChanged",
+				ButtonUncheck = "SettingCheckChanged",
+			},
+		},
+	},
+}
+local tSettingItemEnumDef = {
+	AnchorOffsets = { 0, 0, 0, 35 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	Font = "CRB_InterfaceMedium", 
+	BGColor = "", 
+	TextColor = "UI_TextHoloTitle", 
+	Name = "SettingItemEnum", 
+	DT_WORDBREAK = true, 
+	Overlapped = true, 
+	Children = {
+		{
+			AnchorOffsets = { 6, 2, -2, -2 },
+			AnchorPoints = { 0, 0, 0.67, 1 },
+			RelativeToClient = true, 
+			Font = "CRB_InterfaceMedium_BO", 
+			Text = "[Description]", 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_TextHoloTitle", 
+			Name = "Description", 
+			DT_VCENTER = true, 
+		},
+		{
+			AnchorOffsets = { 2, 2, -2, -2 },
+			AnchorPoints = { 0.67, 0, 1, 1 },
+			RelativeToClient = true, 
+			BGColor = "UI_WindowBGDefault", 
+			TextColor = "UI_WindowTextDefault", 
+			Name = "DropdownContainer", 
+		},
+	},
+}
+
+local tHoloEnumPopupElementSingleDef = {
+	AnchorOffsets = { 0, 0, 0, 28 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "HoloEnumPopupElementSingle", 
+	SwallowMouseClicks = true, 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 30 },
+			AnchorPoints = "HFILL",
+			Class = "Button", 
+			Base = "BK3:btnHolo_ListView_Simple", 
+			Font = "CRB_Button", 
+			ButtonType = "PushButton", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextHoloNormal", 
+			NormalTextColor = "UI_BtnTextHoloNormal", 
+			PressedTextColor = "UI_BtnTextHoloPressed", 
+			FlybyTextColor = "UI_BtnTextHoloFlyby", 
+			PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+			DisabledTextColor = "UI_BtnTextHoloDisabled", 
+			Name = "Button", 
+			Template = "HoloWindowSound", 
+			WindowSoundTemplate = "HoloButtonSmall", 
+			TooltipFont = "CRB_InterfaceSmall", 
+			Overlapped = true, 
+			Events = {
+				ButtonSignal = "OnSignalEnumCoice",
+			},
+		},
+	},
+}
+local tHoloEnumPopupElementTopDef = {
+	AnchorOffsets = { 0, 0, 0, 28 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "HoloEnumPopupElementTop", 
+	SwallowMouseClicks = true, 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 30 },
+			AnchorPoints = "HFILL",
+			Class = "Button", 
+			Base = "BK3:btnHolo_ListView_Top", 
+			Font = "CRB_Button", 
+			ButtonType = "PushButton", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextHoloNormal", 
+			NormalTextColor = "UI_BtnTextHoloNormal", 
+			PressedTextColor = "UI_BtnTextHoloPressed", 
+			FlybyTextColor = "UI_BtnTextHoloFlyby", 
+			PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+			DisabledTextColor = "UI_BtnTextHoloDisabled", 
+			Name = "Button", 
+			Template = "HoloWindowSound", 
+			WindowSoundTemplate = "HoloButtonSmall", 
+			TooltipFont = "CRB_InterfaceSmall", 
+			Overlapped = true, 
+			Events = {
+				ButtonSignal = "OnSignalEnumCoice",
+			},
+		},
+	},
+}
+local tHoloEnumPopupElementMiddleDef = {
+	AnchorOffsets = { 0, 0, 0, 28 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "HoloEnumPopupElementMiddle", 
+	SwallowMouseClicks = true, 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 30 },
+			AnchorPoints = "HFILL",
+			Class = "Button", 
+			Base = "BK3:btnHolo_ListView_Mid", 
+			Font = "CRB_Button", 
+			ButtonType = "PushButton", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextHoloNormal", 
+			NormalTextColor = "UI_BtnTextHoloNormal", 
+			PressedTextColor = "UI_BtnTextHoloPressed", 
+			FlybyTextColor = "UI_BtnTextHoloFlyby", 
+			PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+			DisabledTextColor = "UI_BtnTextHoloDisabled", 
+			Name = "Button", 
+			Template = "HoloWindowSound", 
+			WindowSoundTemplate = "HoloButtonSmall", 
+			TooltipFont = "CRB_InterfaceSmall", 
+			Overlapped = true, 
+			Events = {
+				ButtonSignal = "OnSignalEnumCoice",
+			},
+		},
+	},
+}
+local tHoloEnumPopupElementBottomDef = {
+	AnchorOffsets = { 0, 0, 0, 28 },
+	AnchorPoints = "HFILL",
+	RelativeToClient = true, 
+	BGColor = "UI_WindowBGDefault", 
+	TextColor = "UI_WindowTextDefault", 
+	Name = "HoloEnumPopupElementBottom", 
+	SwallowMouseClicks = true, 
+	Children = {
+		{
+			AnchorOffsets = { 0, 0, 0, 30 },
+			AnchorPoints = "HFILL",
+			Class = "Button", 
+			Base = "BK3:btnHolo_ListView_Btm", 
+			Font = "CRB_Button", 
+			ButtonType = "PushButton", 
+			DT_VCENTER = true, 
+			DT_CENTER = true, 
+			BGColor = "UI_BtnBGDefault", 
+			TextColor = "UI_BtnTextHoloNormal", 
+			NormalTextColor = "UI_BtnTextHoloNormal", 
+			PressedTextColor = "UI_BtnTextHoloPressed", 
+			FlybyTextColor = "UI_BtnTextHoloFlyby", 
+			PressedFlybyTextColor = "UI_BtnTextHoloPressedFlyby", 
+			DisabledTextColor = "UI_BtnTextHoloDisabled", 
+			Name = "Button", 
+			Template = "HoloWindowSound", 
+			WindowSoundTemplate = "HoloButtonSmall", 
+			TooltipFont = "CRB_InterfaceSmall", 
+			Overlapped = true, 
+			Events = {
+				ButtonSignal = "OnSignalEnumCoice",
+			},
+		},
+	},
+}
+
+-- shared event handler table for window elements
+local EventsHandler = {}
 function EventsHandler:OnSignalEnumCoice(wndHandler, wndControl, eMouseButton )
 	if wndHandler ~= wndControl then
 		return
@@ -83,9 +511,11 @@ function EventsHandler:ShowPopup( wndHandler, wndControl )
 		return
 	end
 	
-	wndHandler:ToFront()
+	wndHandler:Invoke()
 end
 
+
+-- Configuration definition
 function Configuration:OnLoad()
 	GeminiLogging = Apollo.GetPackage("Gemini:Logging-1.2").tPackage
 	glog = GeminiLogging:GetLogger({
@@ -98,10 +528,6 @@ function Configuration:OnLoad()
 	self.xmlDoc = XmlDoc.CreateFromFile("Configuration.xml")
 	self.xmlDoc:RegisterCallback("OnDocumentReady", self)		
 end
-
-
-
-
 
 function Configuration:OnDocumentReady()
 	self.ready = true
@@ -335,7 +761,7 @@ function Configuration:CreatePopup(wndParent, tOptions)
 	return wndPopup
 end
 
-function Configuration:ToCallback(tTable, oKey) 
+function Configuration:ToCallback(tTable, oKey, ...) 
 	if not tTable then
 		error("Table may not be nil")
 	end
@@ -346,27 +772,35 @@ function Configuration:ToCallback(tTable, oKey)
 	
 	local clb = tTable[oKey]
 	if not clb then
-		error("Key must exist in table.")
+		error(string.format("Key '%s' must exist in table.", tostring(oKey)))
 	end	
 	
 	if type(clb) ~="function" then
 		error("Key in table must be a function")
 	end
-	
-	return setmetatable(
+			
+	local result =  setmetatable(
 		{
 			owner = tTable,
-			key = oKey
+			key = oKey,
+			args = arg
 		},
 		{
-			__mode="v",
+			-- GOTCHA: can't use weak values, t.args would get collected otherwise (no external references)
 			__call=function(t, ...) 
-				return t.owner[t.key](t.owner, unpack(arg))
+				if t.args and #t.args ~= 0 then
+					local tArgs = {}
+					for _, v in ipairs(t.args) do table.insert(tArgs, v) end
+					for _, v in ipairs(arg) do table.insert(tArgs, v) end					
+					
+					return t.owner[t.key](t.owner, unpack(tArgs))					
+				else
+					return t.owner[t.key](t.owner, unpack(arg))
+				end
 			end
 		}	
 	)
-	
-	
+	return result
 end
 
 Apollo.RegisterPackage(
