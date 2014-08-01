@@ -107,14 +107,6 @@ local dbDefaults = {
 					}
 				}
 			}, {
-				key = "DoctorVanGogh:Newton:Triggers:PvpMatch",
-				values = {
-					bEnabled = true,
-					tSettings = {
-						Action = 1
-					}
-				}
-			}, {
 				key = "DoctorVanGogh:Newton:Triggers:Default",
 				values = {
 					bEnabled = true,

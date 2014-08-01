@@ -29,7 +29,6 @@
     <Script Name="Triggers.Challenge.lua"/>
     <Script Name="Triggers.Group.lua"/>
     <Script Name="Triggers.Instance.lua"/>
-    <Script Name="Triggers.PvpMatch.lua"/>
     <Script Name="Triggers.Stealth.lua"/>
     <Script Name="Triggers.Default.lua"/>
     <Script Name="TriggerList.lua"/>

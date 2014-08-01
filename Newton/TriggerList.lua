@@ -16,6 +16,7 @@ local oo = Apollo.GetPackage("DoctorVanGogh:Lib:Loop:Multiple").tPackage
 local TriggerBase = Apollo.GetPackage("DoctorVanGogh:Newton:Triggers:Base").tPackage
 local ScanbotTrigger = Apollo.GetPackage("DoctorVanGogh:Newton:ScanbotTrigger").tPackage
 local Serializable = Apollo.GetPackage("DoctorVanGogh:Lib:Serializable").tPackage
+local inspect = Apollo.GetPackage("Drafto:Lib:inspect-1.2").tPackage
 
 local glog
 
@@ -235,6 +236,7 @@ Apollo.RegisterPackage(
 	MAJOR, 
 	MINOR, 
 	{	
+		"Drafto:Lib:inspect-1.2",
 		"DoctorVanGogh:Lib:Serializable",
 		"DoctorVanGogh:Newton:ScanbotTrigger",
 		"DoctorVanGogh:Newton:Triggers:Base",
